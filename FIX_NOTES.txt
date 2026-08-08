@@ -1,0 +1,11 @@
+KhangHuynh Vault - Chat Fix
+
+Đã sửa:
+1. Vercel/production build chạy `prisma migrate deploy` trước khi build, để migration ChatSettings/Conversation/ChatMessage được áp dụng.
+2. Chat chọn Super Admin đang có avatar trước, giúp avatar trong khung chat đồng bộ với Hồ sơ & Cài đặt.
+3. Modal Tin nhắn chào mừng hiển thị thông báo lỗi API cụ thể thay vì luôn hiện "Lưu thất bại."
+
+Lưu ý:
+- File .env đã được loại khỏi ZIP để tránh đóng gói secret.
+- Khi deploy, hãy cấu hình DATABASE_URL và các biến môi trường như project cũ.
+- Build mới sẽ tự chạy Prisma migrations.

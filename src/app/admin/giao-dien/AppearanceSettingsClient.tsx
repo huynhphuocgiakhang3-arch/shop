@@ -1,0 +1,241 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { Image as ImageIcon, Upload, X, Power, Loader2 } from "lucide-react";
+import { GlassPanel } from "@/components/ui/GlassPanel";
+import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
+import { LoadingBlock } from "@/components/dashboard/primitives";
+import {
+  useAdminSettings,
+  useUpdateSettings,
+  useUploadAppearanceImage,
+  useRemoveAppearanceImage,
+  type AppearanceTarget
+} from "@/hooks/admin/useAdminSettings";
+
+const SLOTS: { target: AppearanceTarget; field: keyof ReturnType<typeof slotFields>; label: string; hint: string }[] = [
+  { target: "logo", field: "logoUrl", label: "Logo", hint: "Hiển thị ở header và trang quản trị." },
+  { target: "favicon", field: "faviconUrl", label: "Favicon", hint: "Biểu tượng trên tab trình duyệt." },
+  { target: "hero", field: "heroImageUrl", label: "Ảnh Hero trang chủ", hint: "Banner lớn ở đầu trang chủ." },
+  { target: "loginBackground", field: "loginBackgroundUrl", label: "Background trang Đăng nhập", hint: "Ảnh nền phía sau khung kính đăng nhập." },
+  { target: "registerBackground", field: "registerBackgroundUrl", label: "Background trang Đăng ký", hint: "Ảnh nền phía sau khung kính đăng ký." },
+  { target: "banner", field: "bannerUrl", label: "Banner khuyến mãi", hint: "Banner hiển thị trong trang chủ/danh mục." }
+];
+
+// Helper only exists to give the SLOTS array above a typed `field` without
+// repeating the SiteSettings type import gymnastics.
+function slotFields() {
+  return {
+    logoUrl: "",
+    faviconUrl: "",
+    heroImageUrl: "",
+    loginBackgroundUrl: "",
+    registerBackgroundUrl: "",
+    bannerUrl: ""
+  };
+}
+
+export function AppearanceSettingsClient() {
+  const { data, isLoading } = useAdminSettings();
+  const updateSettings = useUpdateSettings();
+  const uploadImage = useUploadAppearanceImage();
+  const removeImage = useRemoveAppearanceImage();
+  const toast = useToast();
+
+  const [message, setMessage] = useState<string | null>(null);
+
+  if (isLoading) return <LoadingBlock />;
+  const settings = data?.settings;
+  if (!settings) return null;
+
+  const currentMessage = message ?? settings.maintenanceMessage ?? "";
+
+  const handleToggleMaintenance = async () => {
+    try {
+      await updateSettings.mutateAsync({ maintenanceMode: !settings.maintenanceMode });
+      toast.show(
+        !settings.maintenanceMode ? "Đã bật chế độ bảo trì. Website chỉ Super Admin truy cập được." : "Đã tắt chế độ bảo trì.",
+        "success"
+      );
+    } catch {
+      toast.show("Không thể cập nhật chế độ bảo trì.", "error");
+    }
+  };
+
+  const handleSaveMessage = async () => {
+    try {
+      await updateSettings.mutateAsync({ maintenanceMessage: currentMessage || null });
+      toast.show("Đã lưu thông báo bảo trì.", "success");
+    } catch {
+      toast.show("Không thể lưu thông báo.", "error");
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-h2 font-display text-white">Giao diện & Hệ thống</h1>
+        <p className="mt-1 text-small text-white/50">
+          Chỉ Super Admin. Thay đổi có hiệu lực ngay lập tức trên toàn bộ website — không cần sửa code, deploy hay restart.
+        </p>
+      </div>
+
+      {/* Maintenance Mode */}
+      <GlassPanel className="p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div
+              className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${
+                settings.maintenanceMode ? "bg-state-danger/15 text-state-danger" : "bg-state-success/15 text-state-success"
+              }`}
+            >
+              <Power className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-body font-medium text-white">Chế độ bảo trì (Maintenance Mode)</h2>
+              <p className="mt-1 text-small text-white/50">
+                Khi bật, toàn bộ website hiển thị màn hình bảo trì cho mọi người — ngoại trừ Super Admin.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={settings.maintenanceMode}
+            onClick={handleToggleMaintenance}
+            disabled={updateSettings.isPending}
+            className={`relative h-8 w-14 shrink-0 rounded-pill transition-colors duration-standard disabled:opacity-50 ${
+              settings.maintenanceMode ? "bg-state-danger" : "bg-white/15"
+            }`}
+          >
+            <motion.span
+              layout
+              transition={{ type: "spring", stiffness: 500, damping: 32 }}
+              className="absolute top-1 h-6 w-6 rounded-full bg-white shadow-md"
+              style={{ left: settings.maintenanceMode ? "calc(100% - 28px)" : "4px" }}
+            />
+          </button>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-2">
+          <label className="text-caption uppercase tracking-wide text-white/40">Thông báo bảo trì (tuỳ chọn)</label>
+          <textarea
+            value={currentMessage}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Chúng tôi sẽ quay lại sớm."
+            rows={2}
+            className="glass-surface w-full resize-none rounded-md border border-white/10 bg-transparent px-4 py-3 text-small text-white/85 outline-none focus:border-accent-orange/50"
+          />
+          <div>
+            <Button variant="secondary" onClick={handleSaveMessage} isLoading={updateSettings.isPending} className="min-h-[40px] px-4 py-2 text-caption">
+              Lưu thông báo
+            </Button>
+          </div>
+        </div>
+      </GlassPanel>
+
+      {/* Appearance */}
+      <GlassPanel className="p-6">
+        <h2 className="text-body font-medium text-white">Appearance</h2>
+        <p className="mt-1 text-small text-white/50">Tải ảnh lên Cloudinary — website tự cập nhật ngay sau khi tải xong.</p>
+
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {SLOTS.map((slot) => (
+            <AppearanceSlot
+              key={slot.target}
+              target={slot.target}
+              label={slot.label}
+              hint={slot.hint}
+              currentUrl={(settings as unknown as Record<string, string | null>)[slot.field]}
+              onUpload={(file) => uploadImage.mutate({ target: slot.target, file })}
+              onRemove={() => removeImage.mutate(slot.target)}
+              isUploading={uploadImage.isPending && uploadImage.variables?.target === slot.target}
+              isRemoving={removeImage.isPending && removeImage.variables === slot.target}
+            />
+          ))}
+        </div>
+      </GlassPanel>
+    </div>
+  );
+}
+
+function AppearanceSlot({
+  target,
+  label,
+  hint,
+  currentUrl,
+  onUpload,
+  onRemove,
+  isUploading,
+  isRemoving
+}: {
+  target: AppearanceTarget;
+  label: string;
+  hint: string;
+  currentUrl: string | null | undefined;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+  isUploading: boolean;
+  isRemoving: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
+
+  const handleFile = (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      toast.show("Ảnh tối đa 8MB.", "error");
+      return;
+    }
+    onUpload(file);
+  };
+
+  return (
+    <div className="glass-surface flex flex-col overflow-hidden rounded-md border border-white/10">
+      <div className="relative flex h-32 items-center justify-center bg-black/30">
+        {currentUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- arbitrary Cloudinary URLs, not a static/known-domain asset
+          <img src={currentUrl} alt={label} className="h-full w-full object-cover" />
+        ) : (
+          <ImageIcon className="h-6 w-6 text-white/20" />
+        )}
+        {(isUploading || isRemoving) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+            <Loader2 className="h-5 w-5 animate-spin text-accent-orange" />
+          </div>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        <div>
+          <p className="text-small font-medium text-white/85">{label}</p>
+          <p className="text-caption text-white/40">{hint}</p>
+        </div>
+        <div className="mt-auto flex gap-2">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/x-icon,image/svg+xml"
+            className="hidden"
+            onChange={(e) => handleFile(e.target.files?.[0])}
+          />
+          <Button
+            variant="secondary"
+            className="min-h-[36px] flex-1 px-3 py-1.5 text-caption"
+            onClick={() => inputRef.current?.click()}
+            disabled={isUploading}
+          >
+            <Upload className="h-3.5 w-3.5" /> Tải lên
+          </Button>
+          {currentUrl && (
+            <Button variant="ghost" className="min-h-[36px] px-2.5 py-1.5 text-caption" onClick={onRemove} disabled={isRemoving} aria-label={`Xóa ${label}`}>
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

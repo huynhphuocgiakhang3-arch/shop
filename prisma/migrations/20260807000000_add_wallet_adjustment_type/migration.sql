@@ -1,0 +1,12 @@
+-- AlterEnum: "WalletTxType" is missing "ADJUSTMENT". src/app/api/admin/wallet/adjust/route.ts
+-- has always written type: "ADJUSTMENT" on every admin balance change, and
+-- src/types/prisma-enums.d.ts / src/lib/format.ts / src/hooks/useWallet.ts already assume
+-- the value exists — but it was never added to schema.prisma or migrated into Postgres.
+-- Every admin credit/debit therefore fails inside the $transaction with a
+-- PrismaClientValidationError (invalid enum value), which src/lib/api.ts maps to the generic
+-- "Yêu cầu không hợp lệ." 400 the admin sees. This migration brings the DB enum in line with
+-- the value the application has been sending all along.
+--
+-- Postgres requires ALTER TYPE ... ADD VALUE to run outside an explicit transaction block,
+-- so this file intentionally contains a single statement.
+ALTER TYPE "WalletTxType" ADD VALUE IF NOT EXISTS 'ADJUSTMENT';

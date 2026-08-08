@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Clash Display", "General Sans", sans-serif;
+  --font-body: "General Sans", "Inter", sans-serif;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 138, 61, 0.35) transparent;
+}
+
+html,
+body {
+  background-color: #05070c;
+  color: rgba(255, 255, 255, 0.92);
+  overscroll-behavior: none;
+}
+
+body {
+  cursor: none;
+}
+
+@media (max-width: 1024px), (hover: none) {
+  body {
+    cursor: auto;
+  }
+}
+
+/* ---------------------------------------------------------- */
+/* Glass surface — shared across Login panel, Sidebar, Cards  */
+/* ---------------------------------------------------------- */
+.glass-surface {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+  isolation: isolate;
+}
+
+.glass-surface::before {
+  /* subtle noise so the glass never looks like flat opacity */
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  border-radius: inherit;
+}
+
+.glass-surface::after {
+  /* soft top reflection */
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 40%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -12px 24px rgba(0, 0, 0, 0.18);
+}
+
+@media (prefers-contrast: more) {
+  .glass-surface {
+    background: rgba(10, 14, 20, 0.92);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+}
+
+.text-gradient-orange {
+  background: linear-gradient(135deg, #ffb073 0%, #ff8a3d 55%, #e8672a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Reduced motion: respected globally per A2/A5 accessibility rules */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible keyboard focus, never removed */
+:focus-visible {
+  outline: 2px solid #ff8a3d;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
