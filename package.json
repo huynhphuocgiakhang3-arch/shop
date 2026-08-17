@@ -1,0 +1,57 @@
+{
+  "name": "khanghuynh-vault",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "postinstall": "prisma generate",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "typescript": "5.5.4",
+    "@prisma/client": "5.18.0",
+    "prisma": "5.18.0",
+    "framer-motion": "11.3.19",
+    "react-hook-form": "7.52.2",
+    "@hookform/resolvers": "3.9.0",
+    "zod": "3.23.8",
+    "axios": "1.7.3",
+    "@tanstack/react-query": "5.51.23",
+    "bcryptjs": "2.4.3",
+    "jose": "5.6.3",
+    "cloudinary": "2.4.0",
+    "q": "1.5.1",
+    "clsx": "2.1.1",
+    "tailwind-merge": "2.4.0",
+    "lucide-react": "0.417.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.14",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@types/bcryptjs": "2.4.6",
+    "autoprefixer": "10.4.19",
+    "postcss": "8.4.40",
+    "tailwindcss": "3.4.7",
+    "tailwindcss-animate": "1.0.7",
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.5",
+    "tsx": "4.16.5"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

@@ -1,0 +1,649 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String                   @id @default(cuid())
+  email              String                   @unique
+  passwordHash       String
+  displayName        String
+  avatarUrl          String?
+  role               Role                     @default(USER)
+  emailVerifiedAt    DateTime?
+  isDeleted          Boolean                  @default(false)
+  deletedAt          DateTime?
+  isBanned           Boolean                  @default(false)
+  bannedAt           DateTime?
+  twoFactorEnabled   Boolean                  @default(false)
+  twoFactorSecret    String?
+  membershipTier     MembershipTier           @default(FREE)
+  rewardPoints       Int                      @default(0)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  auditLogs          AuditLog[]
+  cart               Cart?
+  downloadTokens     DownloadToken[]
+  emailVerifications EmailVerificationToken[]
+  favorites          Favorite[]
+  notifications      Notification[]
+  orders             Order[]
+  passwordResets     PasswordResetToken[]
+  refreshTokens      RefreshToken[]
+  depositRequests    DepositRequest[]
+  conversation       Conversation?
+  reviews            Review[]
+  reviewLikes        ReviewLike[]
+  reviewReports      ReviewReport[]
+  supportTickets     SupportTicket[]
+  supportMessages    SupportTicketMessage[]
+  wallet             Wallet?
+
+  @@index([role])
+  @@index([membershipTier])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  ipAddress String?
+  userAgent String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  icon      String?
+  color     String?
+  bannerUrl String?
+  order     Int        @default(0)
+  parentId  String?
+  createdAt DateTime   @default(now())
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+  products  Product[]
+
+  @@index([parentId])
+}
+
+model Product {
+  id               String          @id @default(cuid())
+  name             String
+  slug             String          @unique
+  shortDescription String
+  description      String
+  thumbnailUrl     String
+  galleryUrls      String[]
+  featureBullets   String[]        @default([])
+  previewVideoUrl  String?
+  fileUrl          String?
+  releaseNotes     String?
+  tags             String[]
+  version          String          @default("1.0.0")
+  fileSizeMb       Int?
+  compatibility    String?
+  price            Decimal         @db.Decimal(12, 2)
+  discountPrice    Decimal?        @db.Decimal(12, 2)
+  stock            Int?
+  isVipOnly        Boolean         @default(false)
+  isFeatured       Boolean         @default(false)
+  status           ProductStatus   @default(PUBLISHED)
+  downloadCount    Int             @default(0)
+  salesCount       Int             @default(0)
+  categoryId       String
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  cartItems        CartItem[]
+  downloadTokens   DownloadToken[]
+  favorites        Favorite[]
+  orderItems       OrderItem[]
+  category         Category        @relation(fields: [categoryId], references: [id])
+  reviews          Review[]
+  coupons          Coupon[]        @relation("CouponProducts")
+
+  @@index([categoryId])
+  @@index([isFeatured])
+  @@index([status])
+}
+
+model Review {
+  id         String         @id @default(cuid())
+  productId  String
+  userId     String
+  rating     Int
+  comment    String?
+  isVerified Boolean        @default(false)
+  isHidden   Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  product    Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes      ReviewLike[]
+  reports    ReviewReport[]
+
+  @@unique([productId, userId])
+  @@index([productId])
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+}
+
+model ReviewReport {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  reason    String
+  createdAt DateTime @default(now())
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  couponId  String?
+  updatedAt DateTime   @updatedAt
+  coupon    Coupon?    @relation(fields: [couponId], references: [id])
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id            String   @id @default(cuid())
+  cartId        String
+  productId     String
+  quantity      Int      @default(1)
+  savedForLater Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  cart          Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  orderNumber   String        @unique
+  userId        String
+  subtotal      Decimal       @db.Decimal(12, 2)
+  discountTotal Decimal       @default(0) @db.Decimal(12, 2)
+  taxTotal      Decimal       @default(0) @db.Decimal(12, 2)
+  total         Decimal       @db.Decimal(12, 2)
+  couponId      String?
+  paymentMethod PaymentMethod
+  status        OrderStatus   @default(PENDING)
+  createdAt     DateTime      @default(now())
+  paidAt        DateTime?
+  refundedAt    DateTime?
+  adminNote     String?
+  coupon        Coupon?       @relation(fields: [couponId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  items         OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id             String          @id @default(cuid())
+  orderId        String
+  productId      String
+  unitPrice      Decimal         @db.Decimal(12, 2)
+  quantity       Int             @default(1)
+  downloadTokens DownloadToken[]
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product         @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Coupon {
+  id            String         @id @default(cuid())
+  code          String         @unique
+  description   String?
+  discountType  String
+  discountValue Decimal        @db.Decimal(12, 2)
+  usageLimit    Int?
+  usageCount    Int            @default(0)
+  minTier       MembershipTier @default(FREE)
+  expiresAt     DateTime?
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  carts         Cart[]
+  orders        Order[]
+  products      Product[]      @relation("CouponProducts")
+}
+
+model DownloadToken {
+  id            String    @id @default(cuid())
+  token         String    @unique
+  userId        String
+  productId     String
+  orderItemId   String
+  downloadCount Int       @default(0)
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  orderItem     OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([productId])
+}
+
+model Wallet {
+  id             String              @id @default(cuid())
+  userId         String              @unique
+  balance        Decimal             @default(0) @db.Decimal(14, 2)
+  pendingBalance Decimal             @default(0) @db.Decimal(14, 2)
+  bonusBalance   Decimal             @default(0) @db.Decimal(14, 2)
+  // Frozen wallets can still be viewed and read (balance shown), but every
+  // route that debits/credits/spends checks this flag first and rejects
+  // with 423 Locked. Toggled only by SUPER_ADMIN — see PHẦN 2 (đóng băng /
+  // mở khóa ví) — never derived from any other state.
+  frozen         Boolean             @default(false)
+  frozenReason   String?
+  frozenAt       DateTime?
+  frozenById     String?
+  updatedAt      DateTime            @updatedAt
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   WalletTransaction[]
+}
+
+model WalletTransaction {
+  id           String         @id @default(cuid())
+  walletId     String
+  type         WalletTxType
+  status       WalletTxStatus @default(PENDING)
+  amount       Decimal        @db.Decimal(14, 2)
+  // Balance snapshot at the moment of this entry — required by the audit
+  // trail spec (Old Balance / New Balance per operation). Nullable so old
+  // rows written before this column existed stay valid (backward compatible).
+  oldBalance   Decimal?       @db.Decimal(14, 2)
+  newBalance   Decimal?       @db.Decimal(14, 2)
+  note         String?
+  ipAddress    String?
+  userAgent    String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  wallet       Wallet         @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@index([status])
+}
+
+// Singleton row (id is always "singleton"), mirrors the SiteSettings pattern
+// below — SUPER_ADMIN edits bank/QR display info here and every deposit page
+// reflects it immediately, no code change or redeploy required.
+model PaymentSettings {
+  id              String   @id @default("singleton")
+  bankName        String?
+  bankLogoUrl     String?
+  accountName     String?
+  accountNumber   String?
+  transferContent String?
+  qrImageUrl      String?
+  cardInstructions String?
+  updatedAt       DateTime @updatedAt
+  updatedById     String?
+}
+
+model DepositRequest {
+  id                  String         @id @default(cuid())
+  userId              String
+  method              DepositMethod
+  status              DepositStatus  @default(PENDING)
+  amount              Decimal        @db.Decimal(14, 2)
+  // QR_BANK: screenshot of the transfer the user uploads after "Tôi đã chuyển".
+  // CARD: the card serial/pin code submitted for manual redemption.
+  proofImageUrl       String?
+  cardProvider        String?
+  cardSerial          String?
+  cardCode            String?
+  note                String?
+  rejectReason        String?
+  ipAddress           String?
+  userAgent           String?
+  reviewedById        String?
+  reviewedAt          DateTime?
+  // Set once approved — points at the WalletTransaction that actually moved
+  // the money, so an approval can never be double-applied (see the approve
+  // route: it upserts on this relation inside the same DB transaction).
+  walletTransactionId String?        @unique
+  createdAt           DateTime       @default(now())
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Ordered playlist SUPER_ADMIN maintains from /admin/nhac. `url` holds a
+// direct audio URL for MP3/CLOUDINARY, or a YouTube video ID for YOUTUBE —
+// the player picks its engine (native <audio> vs YT IFrame API) from `source`.
+model MusicTrack {
+  id        String      @id @default(cuid())
+  title     String
+  artist    String?
+  source    MusicSource
+  url       String
+  coverUrl  String?
+  sortOrder Int         @default(0)
+  isActive  Boolean     @default(true)
+  addedById String?
+  createdAt DateTime    @default(now())
+
+  @@index([sortOrder])
+  @@index([isActive])
+}
+
+// One conversation per user with Super Admin — the messenger has exactly one
+// contact by design (spec: "Danh sách chat ban đầu chỉ có 1 người: Super
+// Admin"), so `userId` is unique rather than modeling multi-party threads.
+model Conversation {
+  id            String        @id @default(cuid())
+  userId        String        @unique
+  // Set true whenever the bot can't ground an answer in site data and hands
+  // off — the admin queue (/admin/chat) sorts/badges on this.
+  needsHuman    Boolean       @default(false)
+  lastMessageAt DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages      ChatMessage[]
+
+  @@index([lastMessageAt])
+  @@index([needsHuman])
+}
+
+model ChatMessage {
+  id             String           @id @default(cuid())
+  conversationId String
+  sender         MessageSender
+  // Only set when sender = ADMIN, so replies show which admin answered.
+  senderId       String?
+  body           String
+  attachmentUrl  String?
+  readByUserAt   DateTime?
+  readByAdminAt  DateTime?
+  createdAt      DateTime         @default(now())
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+// Singleton — Super Admin edits the auto-greeting text here (spec PHẦN 3 /
+// PHẦN 4: "Nội dung này Super Admin được chỉnh sửa trong Admin").
+model ChatSettings {
+  id              String   @id @default("singleton")
+  greetingMessage String?
+  updatedAt       DateTime @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+// Singleton row (id is always "singleton") holding site-wide settings that
+// SUPER_ADMIN can change at runtime without a code change/redeploy/restart:
+// Maintenance Mode + Appearance (logo/favicon/backgrounds via Cloudinary).
+model SiteSettings {
+  id                    String   @id @default("singleton")
+  maintenanceMode       Boolean  @default(false)
+  maintenanceMessage    String?
+  logoUrl               String?
+  faviconUrl            String?
+  heroImageUrl          String?
+  loginBackgroundUrl    String?
+  registerBackgroundUrl String?
+  bannerUrl             String?
+  footerText            String?
+  announcementEnabled   Boolean  @default(true)
+  announcementText      String?
+  heroPrimaryLine      String   @default("Sản phẩm số.")
+  heroVariantLine      String   @default("File/Tool hiện đại")
+  heroVaultLine        String   @default("Đẳng cấp Vault.")
+  heroDescription      String?
+  heroPrimaryCta       String   @default("Khám phá Marketplace")
+  heroSecondaryCta     String   @default("Mở Vault")
+  memberDisplay        String?
+  fiveStarDisplay      String?
+  updatedAt             DateTime @updatedAt
+  updatedById           String?
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model SupportTicket {
+  id        String                 @id @default(cuid())
+  userId    String
+  subject   String
+  status    TicketStatus           @default(OPEN)
+  priority  TicketPriority         @default(MEDIUM)
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+  user      User                   @relation(fields: [userId], references: [id])
+  messages  SupportTicketMessage[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model SupportTicketMessage {
+  id            String        @id @default(cuid())
+  ticketId      String
+  authorId      String
+  body          String
+  attachmentUrl String?
+  createdAt     DateTime      @default(now())
+  author        User          @relation(fields: [authorId], references: [id])
+  ticket        SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
+
+model FaqItem {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+}
+
+model BlockedIp {
+  id        String   @id @default(cuid())
+  ipAddress String   @unique
+  reason    String?
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum MembershipTier {
+  FREE
+  SILVER
+  GOLD
+  DIAMOND
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  WALLET
+  BANK_TRANSFER
+  STRIPE
+  PAYPAL
+  VNPAY
+  MOMO
+  MANUAL
+}
+
+enum WalletTxType {
+  DEPOSIT
+  WITHDRAW
+  PURCHASE
+  REFUND
+  BONUS
+  COMMISSION
+  ADJUSTMENT
+}
+
+enum WalletTxStatus {
+  PENDING
+  COMPLETED
+  REJECTED
+}
+
+enum DepositMethod {
+  QR_BANK
+  CARD
+}
+
+enum DepositStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MusicSource {
+  MP3
+  YOUTUBE
+  CLOUDINARY
+}
+
+enum MessageSender {
+  USER
+  ADMIN
+  BOT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  ORDER
+  WALLET
+  MEMBERSHIP
+  SECURITY
+  SUPPORT
+  SYSTEM
+}
