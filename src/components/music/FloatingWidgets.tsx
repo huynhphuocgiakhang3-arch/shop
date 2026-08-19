@@ -165,6 +165,27 @@ export function FloatingWidgets() {
   const frameRef = useRef<number | null>(null);
   const targetRef = useRef({ x: 0, y: 0 });
 
+  // On a tall hero (marketplace home, product pages), a bottom-right fixed
+  // button sitting there from the very first paint visually covers the
+  // hero description / badges before the user has scrolled at all — that's
+  // the actual cause of the "nút che chữ" complaint, not a layout bug.
+  // Staying hidden for the first ~1 viewport of scroll keeps the controls
+  // out of the way of primary marketing content while still surfacing them
+  // almost immediately once the person starts engaging with the page.
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setRevealed(true);
+      return;
+    }
+    const THRESHOLD = 140;
+    const onScroll = () => setRevealed(window.scrollY > THRESHOLD);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   useEffect(() => {
     const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -211,7 +232,10 @@ export function FloatingWidgets() {
 
   const content = (
     <div
-      className="khv-floating-safe flex flex-col items-end gap-3 will-change-transform"
+      className={cn(
+        "khv-floating-safe flex flex-col items-end gap-3 will-change-transform transition-[opacity,transform] duration-300 ease-out",
+        revealed || musicOpen || chatOpen ? "opacity-100" : "pointer-events-none translate-y-2 opacity-0"
+      )}
       style={{ transform: `translate3d(${magnetic.x}px, ${magnetic.y}px, 0)` }}
     >
       <AnimatePresence>{musicOpen && <MusicPanel onClose={() => setMusicOpen(false)} />}</AnimatePresence>

@@ -17,8 +17,12 @@ export function VaultCore3D() {
   const reducedMotion = useReducedMotion();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [11, -11]), { stiffness: 140, damping: 22, mass: 0.6 });
-  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-15, 15]), { stiffness: 140, damping: 22, mass: 0.6 });
+  // Rotation range is intentionally modest (±11°) — with `translateZ` +
+  // perspective on the child badges, a wider swing visually magnifies and
+  // shifts them enough to push past a narrow phone's viewport edge even
+  // though their flat 2D position is safely inside the container.
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [8, -8]), { stiffness: 140, damping: 22, mass: 0.6 });
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-11, 11]), { stiffness: 140, damping: 22, mass: 0.6 });
   const glowX = useTransform(x, [-0.5, 0.5], [32, 68]);
   const glowY = useTransform(y, [-0.5, 0.5], [32, 68]);
   const sheenOpacity = useTransform(x, [-0.5, 0, 0.5], [0.15, 0.55, 0.15]);
@@ -118,8 +122,8 @@ export function VaultCore3D() {
             className="absolute inset-[39%] rounded-xl bg-gradient-to-br from-white via-accent-orange to-accent-orange-deep shadow-[0_0_40px_rgba(255,138,61,.55)] [transform:translateZ(82px)]"
           />
 
-          {/* HUD chips — positioned in % of the core so they can never spill past the viewport on narrow phones */}
-          <div className="absolute -right-[6%] top-[8%] w-[38%] max-w-[132px] rounded-xl border border-white/10 bg-[#0b0f17]/92 p-2.5 shadow-2xl backdrop-blur-xl [transform:translateZ(100px)] sm:w-36 sm:rounded-2xl sm:p-3">
+          {/* HUD chips — positioned in % of the core so they can never spill past the viewport on narrow phones. Kept just inside the core's own edge (not protruding past it) because `translateZ` + perspective visually magnifies anything sitting outside the box once the object is tilted by touch/drag — a badge hanging past the edge could swing off-screen mid-rotation even though its flat 2D position looked safe. */}
+          <div className="absolute right-[2%] top-[8%] w-[38%] max-w-[128px] rounded-xl border border-white/10 bg-[#0b0f17]/92 p-2.5 shadow-2xl backdrop-blur-xl [transform:translateZ(70px)] sm:w-36 sm:rounded-2xl sm:p-3">
             <p className="text-[7px] font-bold uppercase tracking-[.16em] text-white/30 sm:text-[8px] sm:tracking-[.18em]">Vault Core</p>
             <p className="mt-1 text-[11px] font-semibold text-white sm:text-sm">Live showcase</p>
             <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10 sm:mt-2 sm:h-1.5">
@@ -130,7 +134,7 @@ export function VaultCore3D() {
               />
             </div>
           </div>
-          <div className="absolute -bottom-[10%] -left-[8%] max-w-[46%] rounded-xl border border-accent-orange/20 bg-[#0b0f17]/94 px-2.5 py-2 shadow-2xl backdrop-blur-xl [transform:translateZ(94px)] sm:rounded-2xl sm:px-4 sm:py-3">
+          <div className="absolute bottom-[2%] left-[2%] max-w-[46%] rounded-xl border border-accent-orange/20 bg-[#0b0f17]/94 px-2.5 py-2 shadow-2xl backdrop-blur-xl [transform:translateZ(64px)] sm:rounded-2xl sm:px-4 sm:py-3">
             <p className="text-[7.5px] font-bold uppercase tracking-[.14em] text-accent-orange sm:text-[9px] sm:tracking-[.18em]">Digital assets</p>
             <p className="mt-0.5 text-[10px] text-white/60 sm:mt-1 sm:text-xs">Sẵn sàng khám phá</p>
           </div>
