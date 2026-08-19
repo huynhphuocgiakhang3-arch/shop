@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, Gift } from "lucide-react";
 
 import { AuroraLayer } from "@/components/auth/AuroraLayer";
 import { CosmicBackground } from "@/components/auth/CosmicBackground";
@@ -22,6 +22,8 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const referralCode = searchParams.get("ref")?.trim().toUpperCase() || undefined;
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -41,7 +43,7 @@ export default function RegisterPage() {
       res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ ...data, referralCode })
       });
     } catch {
       setServerError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng và thử lại.");
@@ -90,6 +92,15 @@ export default function RegisterPage() {
               <LoginGlassPanel>
                 <h1 className="mb-1 text-h3 font-display text-white">Tạo tài khoản</h1>
                 <p className="mb-6 text-small text-white/50">Tham gia KhangHuynh Vault chỉ trong vài giây.</p>
+
+                {referralCode && (
+                  <div className="mb-5 flex items-center gap-2.5 rounded-2xl border border-accent-orange/20 bg-accent-orange/[.07] px-4 py-3">
+                    <Gift className="h-4 w-4 shrink-0 text-accent-orange" />
+                    <p className="text-caption text-white/70">
+                      Bạn được giới thiệu bởi mã <span className="font-mono font-bold text-accent-orange">{referralCode}</span>
+                    </p>
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>
                   <Input

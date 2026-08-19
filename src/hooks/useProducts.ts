@@ -49,14 +49,18 @@ export interface ProductDetail extends ProductCardData {
   }[];
 }
 
-export function useProduct(slug: string) {
+export type ProductDetailResponse = { product: ProductDetail; related: ProductCardData[]; isFavorited: boolean; hasPurchased: boolean };
+
+// `initialData` lets the server-rendered page hand off the exact payload it
+// already fetched for SEO/metadata, so the client never re-fetches on first
+// paint — no loading flash, no duplicate request. Subsequent client-side
+// navigations (e.g. clicking a "related product" card) still fetch fresh.
+export function useProduct(slug: string, initialData?: ProductDetailResponse) {
   return useQuery({
     queryKey: ["product", slug],
-    queryFn: () =>
-      api.get<{ product: ProductDetail; related: ProductCardData[]; isFavorited: boolean; hasPurchased: boolean }>(
-        `/api/products/${slug}`
-      ),
-    enabled: Boolean(slug)
+    queryFn: () => api.get<ProductDetailResponse>(`/api/products/${slug}`),
+    enabled: Boolean(slug),
+    initialData
   });
 }
 

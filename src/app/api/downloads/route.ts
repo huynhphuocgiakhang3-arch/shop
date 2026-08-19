@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: "desc" },
         skip,
         take,
-        include: { product: { select: { name: true, thumbnailUrl: true, slug: true, version: true } } }
+        include: { product: { select: { name: true, thumbnailUrl: true, slug: true, version: true, fileSizeMb: true } } }
       }),
       prisma.downloadToken.count({ where: { userId: user.sub } })
     ]);

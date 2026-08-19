@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import { GlassPanel } from "@/components/ui/GlassPanel";
@@ -26,7 +28,15 @@ export function ConfirmDialog({
   onConfirm,
   onCancel
 }: ConfirmDialogProps) {
-  return (
+  // Portalled to <body> for the same reason as Modal/FloatingWidgets: this
+  // component is used from deep inside pages with all sorts of ancestor
+  // wrappers (glass panels, auth backgrounds), and any ancestor with
+  // backdrop-filter would otherwise hijack this `position: fixed` overlay.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -42,8 +52,9 @@ export function ConfirmDialog({
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm"
           >
-            <GlassPanel radius="md" className="w-full max-w-sm p-6">
+            <GlassPanel radius="md" className="w-full p-6">
               <div className="mb-3 flex items-center gap-2">
                 <AlertTriangle className={danger ? "h-5 w-5 text-state-danger" : "h-5 w-5 text-accent-orange"} />
                 <h2 className="text-title text-white">{title}</h2>
@@ -61,6 +72,7 @@ export function ConfirmDialog({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

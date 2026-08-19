@@ -40,7 +40,7 @@ export function SectionCard({
   children,
   className
 }: {
-  title: string;
+  title: React.ReactNode;
   action?: { label: string; href: string };
   children: React.ReactNode;
   className?: string;

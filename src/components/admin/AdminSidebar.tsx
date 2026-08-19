@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, LayoutDashboard, Package, ShoppingBag, Users, LogOut, ShieldCheck, Palette, Wallet, QrCode, Music2, MessageCircle, Tags, TicketPercent, Star, CircleHelp, Megaphone, LifeBuoy, Download, ShieldAlert } from "lucide-react";
+import { Menu, X, LayoutDashboard, Package, ShoppingBag, Users, LogOut, ShieldCheck, Palette, Wallet, QrCode, Music2, MessageCircle, Tags, TicketPercent, Star, CircleHelp, Megaphone, LifeBuoy, Download, ShieldAlert, Gift } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
 import { DisplayControls } from "@/components/preferences/DisplayControls";
@@ -17,6 +17,7 @@ const NAV = [
   { href: "/admin/don-hang", label: "Đơn hàng", icon: ShoppingBag },
   { href: "/admin/tai-xuong", label: "Lịch sử tải xuống", icon: Download },
   { href: "/admin/nguoi-dung", label: "Người dùng", icon: Users },
+  { href: "/admin/gioi-thieu", label: "Giới thiệu bạn bè", icon: Gift },
   { href: "/admin/ho-tro", label: "Hỗ trợ", icon: LifeBuoy },
   { href: "/admin/tin-nhan", label: "Tin nhắn", icon: MessageCircle },
   { href: "/admin/ma-giam-gia", label: "Mã giảm giá", icon: TicketPercent },

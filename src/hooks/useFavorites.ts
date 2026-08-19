@@ -3,6 +3,7 @@ import { api } from "@/lib/api-client";
 
 export interface FavoriteItem {
   id: string;
+  createdAt: string;
   product: { id: string; name: string; slug: string; thumbnailUrl: string; price: string; discountPrice: string | null };
 }
 

@@ -23,6 +23,8 @@ export interface SiteSettings {
   heroSecondaryCta: string;
   memberDisplay: string | null;
   fiveStarDisplay: string | null;
+  referralEnabled: boolean;
+  referralCommissionPercent: number | string;
   updatedAt: string;
 }
 

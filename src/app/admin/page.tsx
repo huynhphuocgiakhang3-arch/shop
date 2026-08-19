@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { DollarSign, ShoppingBag, Users, LifeBuoy, Wallet } from "lucide-react";
+import { DollarSign, ShoppingBag, Users, LifeBuoy, Wallet, Radio } from "lucide-react";
 import { useAdminOverview } from "@/hooks/admin/useAdminOverview";
 import { StatCard, SectionCard, LoadingBlock, EmptyState } from "@/components/dashboard/primitives";
+import { RevenueChart } from "@/components/admin/RevenueChart";
 import { formatVnd } from "@/lib/format";
 
 export default function AdminOverviewPage() {
@@ -12,6 +13,9 @@ export default function AdminOverviewPage() {
 
   if (isLoading) return <LoadingBlock />;
   if (!data) return <EmptyState title="Không thể tải dữ liệu tổng quan" description="Đã có lỗi khi tải số liệu hệ thống. Vui lòng tải lại trang." />;
+
+  const last14Total = data.dailySeries.reduce((sum, d) => sum + d.revenue, 0);
+  const last14Orders = data.dailySeries.reduce((sum, d) => sum + d.orders, 0);
 
   return (
     <div className="flex flex-col gap-8">
@@ -33,6 +37,27 @@ export default function AdminOverviewPage() {
           <StatCard icon={Wallet} label="Giao dịch ví chờ duyệt" value={String(data.pendingWalletTransactions)} />
         </Link>
       </div>
+
+      <SectionCard
+        title={
+          <div className="flex items-center gap-2">
+            <span>Doanh thu 14 ngày gần nhất</span>
+            <span className="flex items-center gap-1 rounded-full bg-state-success/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-state-success">
+              <Radio className="h-2.5 w-2.5 animate-pulse" /> Live
+            </span>
+          </div>
+        }
+      >
+        <div className="mb-4 flex flex-wrap gap-6 text-small text-white/50">
+          <span>
+            Tổng: <span className="font-semibold text-white">{formatVnd(last14Total)}</span>
+          </span>
+          <span>
+            Đơn hàng: <span className="font-semibold text-white">{last14Orders}</span>
+          </span>
+        </div>
+        <RevenueChart data={data.dailySeries} />
+      </SectionCard>
 
       <SectionCard title="Sản phẩm bán chạy nhất">
         {data.topProducts.length === 0 ? (

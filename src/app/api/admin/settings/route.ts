@@ -57,6 +57,19 @@ export async function PATCH(req: NextRequest) {
       patch.announcementEnabled = body.announcementEnabled;
     }
 
+    if ("referralEnabled" in body) {
+      if (typeof body.referralEnabled !== "boolean") return jsonError("referralEnabled phải là true/false.", 422);
+      patch.referralEnabled = body.referralEnabled;
+    }
+
+    if ("referralCommissionPercent" in body) {
+      const value = Number(body.referralCommissionPercent);
+      if (!Number.isFinite(value) || value < 0 || value > 50) {
+        return jsonError("Tỷ lệ hoa hồng giới thiệu phải từ 0 đến 50%.", 422);
+      }
+      patch.referralCommissionPercent = value;
+    }
+
     if ("maintenanceMode" in body) {
       if (typeof body.maintenanceMode !== "boolean") {
         return jsonError("maintenanceMode phải là true/false.", 422);

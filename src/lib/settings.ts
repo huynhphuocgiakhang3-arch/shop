@@ -39,6 +39,8 @@ export type SiteSettingsPatch = Partial<
     | "heroSecondaryCta"
     | "memberDisplay"
     | "fiveStarDisplay"
+    | "referralEnabled"
+    | "referralCommissionPercent"
   >
 >;
 
@@ -72,6 +74,8 @@ export function publicSiteSettings(settings: SiteSettings) {
     heroPrimaryCta: settings.heroPrimaryCta,
     heroSecondaryCta: settings.heroSecondaryCta,
     memberDisplay: settings.memberDisplay,
-    fiveStarDisplay: settings.fiveStarDisplay
+    fiveStarDisplay: settings.fiveStarDisplay,
+    referralEnabled: settings.referralEnabled,
+    referralCommissionPercent: settings.referralCommissionPercent
   };
 }

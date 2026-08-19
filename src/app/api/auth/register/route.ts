@@ -7,6 +7,7 @@ import { rateLimit, clientIp } from "@/lib/security/rate-limit";
 import { isSameOrigin } from "@/lib/security/same-origin";
 import { generateSecureToken } from "@/lib/tokens";
 import { signAccessToken, signRefreshToken } from "@/lib/auth/jwt";
+import { findReferrerByCode } from "@/lib/referral";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
     return jsonError(parsed.error.issues[0]?.message ?? "Thông tin không hợp lệ.", 422);
   }
 
-  const { displayName, email, password } = parsed.data;
+  const { displayName, email, password, referralCode } = parsed.data;
 
   try {
     // Check duplicate email with a clear user-facing message.
@@ -52,12 +53,22 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
+    // A referral code from a signup link is best-effort: an invalid/expired
+    // code must never block account creation, so we look it up first and
+    // silently ignore a miss rather than validating inside registerSchema.
+    let referredById: string | undefined;
+    if (referralCode) {
+      const referrer = await findReferrerByCode(referralCode);
+      if (referrer) referredById = referrer.id;
+    }
+
     // Create user + wallet + cart atomically so partial state is impossible.
     const user = await prisma.user.create({
       data: {
         email,
         displayName,
         passwordHash,
+        referredById,
         wallet: { create: {} },
         cart: { create: {} }
       }

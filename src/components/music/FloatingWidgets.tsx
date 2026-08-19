@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Music2, MessageCircle, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, X } from "lucide-react";
 import { useMusicPlayer } from "@/components/music/MusicProvider";
@@ -198,9 +199,21 @@ export function FloatingWidgets() {
   const { data: convoData } = useConversation(isLoggedIn && !chatOpen);
   const unread = convoData?.messages.filter((m) => m.sender !== "USER" && !m.readByUserAt).length ?? 0;
 
-  return (
-    <div className="khv-floating-safe flex flex-col items-end gap-3 will-change-transform"
-      style={{ transform: `translate3d(${magnetic.x}px, ${magnetic.y}px, 0)` }}>
+  // Rendered via portal straight onto <body>. Any ancestor further up the
+  // tree that gains a backdrop-filter / filter / transform (glass panels,
+  // page-transition wrappers, etc.) would otherwise hijack the containing
+  // block for `position: fixed` — a well-known WebKit/Blink quirk that is
+  // exactly what caused the widget to drift to mid-right on mobile instead
+  // of staying pinned to the bottom-right corner. Portalling removes that
+  // failure mode permanently, regardless of what future pages wrap around it.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const content = (
+    <div
+      className="khv-floating-safe flex flex-col items-end gap-3 will-change-transform"
+      style={{ transform: `translate3d(${magnetic.x}px, ${magnetic.y}px, 0)` }}
+    >
       <AnimatePresence>{musicOpen && <MusicPanel onClose={() => setMusicOpen(false)} />}</AnimatePresence>
       <div className="relative">
         <FloatingButton icon={Music2} label="Music" active={musicOpen} onClick={() => setMusicOpen((v) => !v)} />
@@ -222,4 +235,7 @@ export function FloatingWidgets() {
       )}
     </div>
   );
+
+  if (!mounted) return null;
+  return createPortal(content, document.body);
 }

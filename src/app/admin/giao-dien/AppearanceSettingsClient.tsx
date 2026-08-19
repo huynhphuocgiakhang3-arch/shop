@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Image as ImageIcon, Upload, X, Power, Loader2 } from "lucide-react";
+import { Image as ImageIcon, Upload, X, Power, Loader2, Gift, Percent } from "lucide-react";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -12,7 +12,8 @@ import {
   useUpdateSettings,
   useUploadAppearanceImage,
   useRemoveAppearanceImage,
-  type AppearanceTarget
+  type AppearanceTarget,
+  type SiteSettings
 } from "@/hooks/admin/useAdminSettings";
 
 const SLOTS: { target: AppearanceTarget; field: keyof ReturnType<typeof slotFields>; label: string; hint: string }[] = [
@@ -162,6 +163,9 @@ export function AppearanceSettingsClient() {
         <CmsTextArea label="Mô tả Hero" value={settings.heroDescription ?? ""} onSave={(value) => updateSettings.mutate({ heroDescription: value || null })} />
       </GlassPanel>
 
+      {/* Referral / Affiliate program */}
+      <ReferralSettingsPanel settings={settings} updateSettings={updateSettings} />
+
       {/* Appearance */}
       <GlassPanel className="min-w-0 overflow-hidden p-4 sm:p-6">
         <h2 className="text-body font-medium text-white">Appearance</h2>
@@ -184,6 +188,112 @@ export function AppearanceSettingsClient() {
         </div>
       </GlassPanel>
     </div>
+  );
+}
+
+function ReferralSettingsPanel({
+  settings,
+  updateSettings
+}: {
+  settings: SiteSettings;
+  updateSettings: ReturnType<typeof useUpdateSettings>;
+}) {
+  const toast = useToast();
+  const [percentDraft, setPercentDraft] = useState(String(settings.referralCommissionPercent));
+  const [dirty, setDirty] = useState(false);
+
+  const handleToggle = () => {
+    updateSettings.mutate(
+      { referralEnabled: !settings.referralEnabled },
+      {
+        onSuccess: () =>
+          toast.show(!settings.referralEnabled ? "Đã bật chương trình giới thiệu." : "Đã tắt chương trình giới thiệu.", "success"),
+        onError: () => toast.show("Không thể cập nhật chương trình giới thiệu.", "error")
+      }
+    );
+  };
+
+  const handleSavePercent = () => {
+    const value = Number(percentDraft);
+    if (!Number.isFinite(value) || value < 0 || value > 50) {
+      toast.show("Tỷ lệ hoa hồng phải từ 0 đến 50%.", "error");
+      return;
+    }
+    updateSettings.mutate(
+      { referralCommissionPercent: value },
+      {
+        onSuccess: () => {
+          toast.show("Đã lưu tỷ lệ hoa hồng.", "success");
+          setDirty(false);
+        },
+        onError: () => toast.show("Không thể lưu tỷ lệ hoa hồng.", "error")
+      }
+    );
+  };
+
+  return (
+    <GlassPanel className="min-w-0 overflow-hidden p-4 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div
+            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${
+              settings.referralEnabled ? "bg-state-success/15 text-state-success" : "bg-white/10 text-white/40"
+            }`}
+          >
+            <Gift className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="text-body font-medium text-white">Chương trình giới thiệu (Referral / Affiliate)</h2>
+            <p className="mt-1 text-small text-white/50">
+              Người giới thiệu nhận % giá trị đơn hàng <strong className="text-white/70">đầu tiên</strong> của mỗi người bạn mời — cộng thẳng vào Wallet ngay khi đơn được thanh toán. Xem bảng xếp hạng tại{" "}
+              <span className="text-white/70">Admin → Giới thiệu bạn bè</span>.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={settings.referralEnabled}
+          onClick={handleToggle}
+          disabled={updateSettings.isPending}
+          className={`relative h-8 w-14 shrink-0 rounded-pill transition-colors duration-standard disabled:opacity-50 ${
+            settings.referralEnabled ? "bg-state-success" : "bg-white/15"
+          }`}
+        >
+          <motion.span
+            layout
+            transition={{ type: "spring", stiffness: 500, damping: 32 }}
+            className="absolute top-1 h-6 w-6 rounded-full bg-white shadow-md"
+            style={{ left: settings.referralEnabled ? "calc(100% - 28px)" : "4px" }}
+          />
+        </button>
+      </div>
+
+      <div className="mt-5 flex flex-col gap-2">
+        <label className="text-caption uppercase tracking-wide text-white/40">Tỷ lệ hoa hồng (% giá trị đơn hàng)</label>
+        <div className="flex min-w-0 max-w-xs gap-2">
+          <div className="relative min-w-0 flex-1">
+            <input
+              type="number"
+              min={0}
+              max={50}
+              step="0.5"
+              value={percentDraft}
+              onChange={(e) => {
+                setPercentDraft(e.target.value);
+                setDirty(true);
+              }}
+              className="w-full rounded-2xl border border-white/10 bg-white/[.03] px-4 py-3 pr-9 text-small text-white outline-none focus:border-accent-orange/50"
+            />
+            <Percent className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
+          </div>
+          <Button variant="secondary" className="shrink-0 px-3 text-caption" disabled={!dirty} onClick={handleSavePercent} isLoading={updateSettings.isPending}>
+            Lưu
+          </Button>
+        </div>
+      </div>
+    </GlassPanel>
   );
 }
 

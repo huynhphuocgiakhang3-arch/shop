@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { LayoutDashboard, ShoppingCart, Wallet, Package, Download, Heart, Bell, LifeBuoy, UserCog, ShieldCheck, ChevronLeft, LogOut, Menu, X, Store } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Wallet, Package, Download, Heart, Bell, LifeBuoy, UserCog, ShieldCheck, ChevronLeft, LogOut, Menu, X, Store, Gift } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
@@ -15,8 +15,9 @@ const NAV = [
   { href: "/gio-hang", label: "Giỏ hàng", icon: ShoppingCart },
   { href: "/vi", label: "Ví của tôi", icon: Wallet },
   { href: "/don-hang", label: "Đơn hàng", icon: Package },
-  { href: "/tai-xuong", label: "Tải xuống", icon: Download },
+  { href: "/tai-xuong", label: "Vault của tôi", icon: Download },
   { href: "/yeu-thich", label: "Yêu thích", icon: Heart },
+  { href: "/gioi-thieu", label: "Giới thiệu bạn bè", icon: Gift },
   { href: "/thong-bao", label: "Thông báo", icon: Bell },
   { href: "/ho-tro", label: "Hỗ trợ", icon: LifeBuoy },
   { href: "/ho-so", label: "Hồ sơ & Cài đặt", icon: UserCog }

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
+import type { Decimal } from "@prisma/client/runtime/library";
 import { prisma } from "@/lib/prisma";
 import { requireActiveUser } from "@/lib/auth/guard";
 import { checkoutSchema } from "@/lib/validations/commerce";
@@ -7,6 +8,7 @@ import { getOrCreateCart, computeCartSummary, type CartWithItems } from "@/lib/c
 import { generateOrderNumber, generateSecureToken } from "@/lib/tokens";
 import { jsonError, jsonOk, logApiError } from "@/lib/api";
 import { isSameOrigin } from "@/lib/security/same-origin";
+import { getSiteSettings } from "@/lib/settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -115,6 +117,12 @@ export async function POST(req: NextRequest) {
       return order;
     });
 
+    // Referral commission — deliberately OUTSIDE the checkout transaction and
+    // wrapped so any failure here is logged but never rolls back or fails
+    // the purchase the buyer is waiting on. Runs once, on a referred user's
+    // very first PAID order.
+    await creditReferralCommissionIfEligible(user.sub, result);
+
     return jsonOk({ order: result }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "WALLET_NOT_FOUND") {
@@ -128,5 +136,70 @@ export async function POST(req: NextRequest) {
     }
     logApiError("checkout", error);
     return jsonError("Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.", 500);
+  }
+}
+
+interface PaidOrder {
+  id: string;
+  orderNumber: string;
+  total: Decimal;
+}
+
+/**
+ * Credits the referrer's wallet a % of a referred user's FIRST paid order.
+ * Intentionally best-effort: any failure is logged, never thrown, so a bug
+ * or edge case in the referral program can never block or reverse a real
+ * purchase. Idempotent by construction — only fires when the order count
+ * for this buyer is exactly 1 (i.e. this order), so re-running it (it never
+ * is, but hypothetically) on the same buyer after a second purchase is a
+ * no-op.
+ */
+async function creditReferralCommissionIfEligible(buyerId: string, order: PaidOrder) {
+  try {
+    const buyer = await prisma.user.findUnique({ where: { id: buyerId }, select: { referredById: true, displayName: true } });
+    if (!buyer?.referredById) return;
+
+    const paidOrderCount = await prisma.order.count({ where: { userId: buyerId, status: "PAID" } });
+    if (paidOrderCount !== 1) return; // Not their first purchase — commission already paid (or never eligible).
+
+    const settings = await getSiteSettings();
+    if (!settings.referralEnabled) return;
+
+    const percent = Number(settings.referralCommissionPercent);
+    if (!Number.isFinite(percent) || percent <= 0) return;
+
+    const commissionAmount = order.total.mul(percent).div(100);
+    if (commissionAmount.lte(0)) return;
+
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const referrerWallet = await tx.wallet.findUnique({ where: { userId: buyer.referredById! } });
+      if (!referrerWallet || referrerWallet.frozen) return;
+
+      const oldBalance = referrerWallet.balance;
+      const newBalance = oldBalance.add(commissionAmount);
+
+      await tx.wallet.update({ where: { id: referrerWallet.id }, data: { balance: { increment: commissionAmount } } });
+      await tx.walletTransaction.create({
+        data: {
+          walletId: referrerWallet.id,
+          type: "COMMISSION",
+          status: "COMPLETED",
+          amount: commissionAmount,
+          oldBalance,
+          newBalance,
+          note: `Hoa hồng giới thiệu ${percent}% từ đơn hàng đầu tiên của ${buyer.displayName} (${order.orderNumber})`
+        }
+      });
+      await tx.notification.create({
+        data: {
+          userId: buyer.referredById!,
+          type: "WALLET",
+          title: "Bạn nhận được hoa hồng giới thiệu!",
+          body: `${buyer.displayName} vừa hoàn tất đơn hàng đầu tiên. Bạn được cộng ${commissionAmount.toFixed(0)}đ hoa hồng vào Wallet.`
+        }
+      });
+    });
+  } catch (error) {
+    logApiError("checkout:referral-commission", error);
   }
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Command, FolderSearch, Search, Sparkles, X } from "lucide-react";
 import { api } from "@/lib/api-client";
@@ -23,6 +24,12 @@ export function SearchCommandPalette() {
   const [q, setQ] = useState("");
   const [data, setData] = useState<SearchResponse>({ products: [], categories: [] });
   const [loading, setLoading] = useState(false);
+  // Portalled to <body> when open — this component is instantiated inside
+  // SiteHeader's backdrop-blurred <header>, which would otherwise hijack
+  // the containing block for this modal's `fixed inset-0` overlay on iOS
+  // Safari (same class of bug as the old floating widgets / nav drawer).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -70,8 +77,9 @@ export function SearchCommandPalette() {
         <kbd className="ml-auto hidden rounded-lg border border-white/10 bg-white/[.035] px-2 py-1 text-[10px] text-white/30 sm:block">⌘ K</kbd>
       </button>
 
-      {open ? (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 px-3 pt-[9vh] backdrop-blur-md sm:px-6" onMouseDown={(e) => { if (e.currentTarget === e.target) close(); }}>
+      {open && mounted
+        ? createPortal(
+            <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 px-3 pt-[9vh] backdrop-blur-md sm:px-6" onMouseDown={(e) => { if (e.currentTarget === e.target) close(); }}>
           <div className="glass-surface khv-search-modal page-enter w-full max-w-3xl overflow-hidden rounded-[28px] border-white/[.14] shadow-[0_40px_120px_rgba(0,0,0,.65)]" role="dialog" aria-modal="true" aria-label="Tìm kiếm">
             <div className="flex items-center gap-3 border-b border-white/[.08] px-4 py-4 sm:px-5">
               <Search className="h-5 w-5 text-accent-orange" />
@@ -97,8 +105,10 @@ export function SearchCommandPalette() {
             </div>
             <div className="hidden items-center justify-between border-t border-white/[.07] px-5 py-3 text-[11px] text-white/25 sm:flex"><span>Enter để mở kết quả · Esc để đóng</span><span>KhangHuynh Vault Search</span></div>
           </div>
-        </div>
-      ) : null}
+        </div>,
+          document.body
+          )
+        : null}
     </>
   );
 }

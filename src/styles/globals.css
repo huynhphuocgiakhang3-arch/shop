@@ -491,6 +491,10 @@ pre, code { overflow-x: auto; max-width: 100%; }
 .khv-type-caret { animation: khv-caret 1.05s steps(1,end) infinite; }
 @media (prefers-reduced-motion: reduce) { .khv-type-caret { animation: none; opacity: .8; } }
 
+/* --- SCROLL RAILS (product gallery thumbnails, etc.) -------------------- */
+.khv-thumb-rail { scrollbar-width: none; -ms-overflow-style: none; }
+.khv-thumb-rail::-webkit-scrollbar { display: none; }
+
 /* --- MICRO INTERACTIONS ------------------------------------------------ */
 .khv-press:active { transform: scale(.97); }
 .khv-nav-indicator { position: relative; }

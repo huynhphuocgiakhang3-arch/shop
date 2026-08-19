@@ -24,6 +24,15 @@ model User {
   twoFactorSecret    String?
   membershipTier     MembershipTier           @default(FREE)
   rewardPoints       Int                      @default(0)
+  // Referral / affiliate program. `referralCode` is intentionally nullable —
+  // rather than a risky backfill migration on an existing user table, it is
+  // generated lazily on first visit to the referral center (see
+  // src/lib/referral.ts). `referredById` is set once, at registration, from
+  // the ?ref= code the new user signed up through.
+  referralCode       String?                  @unique
+  referredById       String?
+  referredBy         User?                    @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals          User[]                   @relation("UserReferrals")
   createdAt          DateTime                 @default(now())
   updatedAt          DateTime                 @updatedAt
   auditLogs          AuditLog[]
@@ -46,6 +55,7 @@ model User {
 
   @@index([role])
   @@index([membershipTier])
+  @@index([referredById])
 }
 
 model RefreshToken {
@@ -476,6 +486,11 @@ model SiteSettings {
   heroSecondaryCta     String   @default("Mở Vault")
   memberDisplay        String?
   fiveStarDisplay      String?
+  // Referral / affiliate program config — SUPER_ADMIN only (see
+  // /admin/giao-dien). Commission is credited once, on a referred user's
+  // first PAID order, as a percentage of that order's total.
+  referralEnabled            Boolean  @default(true)
+  referralCommissionPercent  Decimal  @default(5) @db.Decimal(5, 2)
   updatedAt             DateTime @updatedAt
   updatedById           String?
 }
