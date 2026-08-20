@@ -172,13 +172,15 @@ export function FloatingWidgets() {
   // Staying hidden for the first ~1 viewport of scroll keeps the controls
   // out of the way of primary marketing content while still surfacing them
   // almost immediately once the person starts engaging with the page.
+  //
+  // `prefers-reduced-motion` must only skip the fade/slide TRANSITION, not
+  // the reveal-on-scroll gate itself — conflating the two (as an earlier
+  // version of this file did) meant anyone with Reduce Motion enabled saw
+  // the buttons overlapping the hero on every single load.
   const [revealed, setRevealed] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
-      setRevealed(true);
-      return;
-    }
+    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     const THRESHOLD = 140;
     const onScroll = () => setRevealed(window.scrollY > THRESHOLD);
     onScroll();
@@ -233,7 +235,8 @@ export function FloatingWidgets() {
   const content = (
     <div
       className={cn(
-        "khv-floating-safe flex flex-col items-end gap-3 will-change-transform transition-[opacity,transform] duration-300 ease-out",
+        "khv-floating-safe flex flex-col items-end gap-3 will-change-transform",
+        !reducedMotion && "transition-[opacity,transform] duration-300 ease-out",
         revealed || musicOpen || chatOpen ? "opacity-100" : "pointer-events-none translate-y-2 opacity-0"
       )}
       style={{ transform: `translate3d(${magnetic.x}px, ${magnetic.y}px, 0)` }}
