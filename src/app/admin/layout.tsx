@@ -12,7 +12,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") redirect("/trang-chu");
 
   return (
-    <div className="flex min-h-screen bg-bg-primary">
+    // Same fix as (dashboard)/layout.tsx — AdminSidebar also returns a
+    // Fragment with a desktop rail + a separate mobile top bar, which needs
+    // to stack above `<main>` on mobile rather than compete with it in a row.
+    <div className="flex min-h-screen flex-col bg-bg-primary lg:flex-row">
       <AdminSidebar />
       <main className="khv-admin-content min-w-0 flex-1 overflow-x-hidden px-4 py-6 page-enter sm:px-6 lg:px-8 lg:py-8">{children}</main>
     </div>

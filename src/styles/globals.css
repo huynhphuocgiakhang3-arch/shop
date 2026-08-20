@@ -172,6 +172,39 @@ html.theme-light .bg-black\/80 { background:rgba(15,23,42,.28) !important; }
 html.theme-light .shadow-\[0_22px_80px_rgba\(0\,0\,0\,.26\)\] { box-shadow:0 22px 70px rgba(15,23,42,.10) !important; }
 html.theme-light ::-webkit-scrollbar-thumb { background:linear-gradient(180deg,rgba(255,138,61,.55),rgba(255,138,61,.22)); }
 
+/* --- LIGHT MODE: exhaustive surface/border/text coverage (auto-generated from actual usage across src/) ---
+   Earlier light-mode rules only covered a hand-picked subset of the white-opacity utility classes in
+   use; any component using a slightly different value (bg-white/[.06], border-white/[.14], etc.) fell
+   through with no override, so its border/surface stayed a near-invisible white-on-white in Light Mode.
+   This block is a full sweep of every such class actually used in the codebase. */
+html.theme-light .bg-white\/10 { background: rgba(15,23,42,.10) !important; }
+html.theme-light .bg-white\/15 { background: rgba(15,23,42,.15) !important; }
+html.theme-light .bg-white\/30 { background: rgba(15,23,42,.30) !important; }
+html.theme-light .bg-white\/5 { background: rgba(15,23,42,.05) !important; }
+html.theme-light .bg-white\/\[\.02\] { background: rgba(15,23,42,.02) !important; }
+html.theme-light .bg-white\/\[\.03\] { background: rgba(15,23,42,.03) !important; }
+html.theme-light .bg-white\/\[\.045\] { background: rgba(15,23,42,.045) !important; }
+html.theme-light .bg-white\/\[\.05\] { background: rgba(15,23,42,.05) !important; }
+html.theme-light .bg-white\/\[\.06\] { background: rgba(15,23,42,.06) !important; }
+html.theme-light .bg-white\/\[\.08\] { background: rgba(15,23,42,.08) !important; }
+html.theme-light .border-white\/15 { border-color: rgba(15,23,42,.15) !important; }
+html.theme-light .border-white\/20 { border-color: rgba(15,23,42,.20) !important; }
+html.theme-light .border-white\/25 { border-color: rgba(15,23,42,.25) !important; }
+html.theme-light .border-white\/5 { border-color: rgba(15,23,42,.05) !important; }
+html.theme-light .border-white\/\[\.06\] { border-color: rgba(15,23,42,.06) !important; }
+html.theme-light .border-white\/\[\.085\] { border-color: rgba(15,23,42,.085) !important; }
+html.theme-light .border-white\/\[\.09\] { border-color: rgba(15,23,42,.09) !important; }
+html.theme-light .border-white\/\[\.10\] { border-color: rgba(15,23,42,.10) !important; }
+html.theme-light .border-white\/\[\.14\] { border-color: rgba(15,23,42,.14) !important; }
+html.theme-light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(15,23,42,.05) !important; }
+html.theme-light .divide-white\/\[\.06\] > :not([hidden]) ~ :not([hidden]) { border-color: rgba(15,23,42,.06) !important; }
+html.theme-light .ring-white\/10 { --tw-ring-color: rgba(15,23,42,.10) !important; }
+html.theme-light .text-white\/15 { color: rgba(17,24,39,.15) !important; }
+html.theme-light .text-white\/28 { color: rgba(17,24,39,.28) !important; }
+html.theme-light .text-white\/42 { color: rgba(17,24,39,.42) !important; }
+html.theme-light .text-white\/95 { color: rgba(17,24,39,.95) !important; }
+
+
 
 /* --- MOBILE TITAN PASS -------------------------------------------------- */
 @media (max-width: 640px) {
