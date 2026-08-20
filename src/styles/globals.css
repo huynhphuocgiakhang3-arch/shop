@@ -528,6 +528,17 @@ pre, code { overflow-x: auto; max-width: 100%; }
 .khv-thumb-rail { scrollbar-width: none; -ms-overflow-style: none; }
 .khv-thumb-rail::-webkit-scrollbar { display: none; }
 
+/* --- TOAST STACK --------------------------------------------------------
+   Bottom offset always clears the mobile bottom nav height (Dashboard/
+   Admin) *and* the iOS home-indicator safe area — using the bottom-nav
+   value everywhere is deliberate: it's never wrong to sit a bit higher on
+   pages that don't have a bottom nav, but sitting too low silently hides
+   the toast behind nav icons on the pages that do. */
+.khv-toast-stack { bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 20px)); }
+@media (max-width: 640px) {
+  .khv-toast-stack { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* --- MICRO INTERACTIONS ------------------------------------------------ */
 .khv-press:active { transform: scale(.97); }
 .khv-nav-indicator { position: relative; }
