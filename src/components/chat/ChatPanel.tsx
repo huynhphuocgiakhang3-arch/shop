@@ -99,7 +99,7 @@ function ChatRoom({ onBack }: { onBack: () => void }) {
   return (
     <>
       <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3">
-        <button onClick={onBack} className="text-white/40 hover:text-white">
+        <button onClick={onBack} className="text-white/40 hover:text-white" aria-label="Quay lại danh sách hội thoại">
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10">
@@ -132,6 +132,7 @@ function ChatRoom({ onBack }: { onBack: () => void }) {
           onClick={handleSend}
           disabled={!text.trim() || send.isPending}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-orange text-black disabled:opacity-40"
+          aria-label="Gửi tin nhắn"
         >
           <Send className="h-4 w-4" />
         </button>
@@ -150,7 +151,7 @@ export function ChatPanel({ onClose }: { onClose: () => void }) {
       className="glass-surface absolute bottom-16 right-0 flex w-80 max-w-[calc(100vw-2rem)] shrink-0 flex-col overflow-hidden rounded-lg border border-white/10 shadow-2xl backdrop-blur-2xl"
     >
       <div className="flex items-center justify-end px-3 pt-2">
-        <button onClick={onClose} className="text-white/40 hover:text-white">
+        <button onClick={onClose} className="text-white/40 hover:text-white" aria-label="Đóng chat">
           <X className="h-4 w-4" />
         </button>
       </div>

@@ -161,6 +161,12 @@ export function AppearanceSettingsClient() {
           <CmsField label="Đánh giá 5 sao hiển thị (vd 1k+)" value={settings.fiveStarDisplay ?? ""} onSave={(value) => updateSettings.mutate({ fiveStarDisplay: value || null })} />
         </div>
         <CmsTextArea label="Mô tả Hero" value={settings.heroDescription ?? ""} onSave={(value) => updateSettings.mutate({ heroDescription: value || null })} />
+        <CmsColorField
+          label="Màu chữ mô tả Hero"
+          value={settings.heroDescriptionColor ?? ""}
+          defaultValue="rgba(255,255,255,.78)"
+          onSave={(value) => updateSettings.mutate({ heroDescriptionColor: value || null })}
+        />
       </GlassPanel>
 
       {/* Referral / Affiliate program */}
@@ -307,6 +313,59 @@ function CmsField({ label, value, onSave }: { label: string; value: string; onSa
         <input value={draft} onChange={(e) => { setDraft(e.target.value); setDirty(true); }} className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-white/[.03] px-4 py-3 text-small text-white outline-none focus:border-accent-orange/50" />
         <Button variant="secondary" className="shrink-0 px-3 text-caption" disabled={!dirty} onClick={() => { onSave(draft); setDirty(false); }}>Lưu</Button>
       </div>
+    </div>
+  );
+}
+
+// Renders a native color swatch (input[type=color] only understands solid
+// #rrggbb, not the rgba()/named values this field also accepts) alongside a
+// free-text input for anyone who wants to type an exact rgba() with alpha —
+// the swatch is a convenience, not the only way in.
+function CmsColorField({
+  label,
+  value,
+  defaultValue,
+  onSave
+}: {
+  label: string;
+  value: string;
+  defaultValue: string;
+  onSave: (value: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const [dirty, setDirty] = useState(false);
+  const swatchValue = /^#[0-9a-fA-F]{6}$/.test(draft) ? draft : "#ffffff";
+  return (
+    <div className="mt-4">
+      <label className="mb-2 block text-caption uppercase tracking-wide text-white/40">{label}</label>
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <input
+          type="color"
+          value={swatchValue}
+          onChange={(e) => { setDraft(e.target.value); setDirty(true); }}
+          className="h-11 w-11 shrink-0 cursor-pointer rounded-xl border border-white/10 bg-transparent p-1"
+          aria-label={`Chọn ${label.toLowerCase()}`}
+        />
+        <input
+          value={draft}
+          onChange={(e) => { setDraft(e.target.value); setDirty(true); }}
+          placeholder={`Mặc định: ${defaultValue}`}
+          className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-white/[.03] px-4 py-3 text-small text-white outline-none focus:border-accent-orange/50"
+        />
+        <Button variant="secondary" className="shrink-0 px-3 text-caption" disabled={!dirty} onClick={() => { onSave(draft); setDirty(false); }}>
+          Lưu
+        </Button>
+        {draft && (
+          <Button
+            variant="ghost"
+            className="shrink-0 px-3 text-caption text-white/40"
+            onClick={() => { setDraft(""); setDirty(false); onSave(""); }}
+          >
+            Đặt lại mặc định
+          </Button>
+        )}
+      </div>
+      <p className="mt-1.5 text-[11px] text-white/35">Nhận mã hex (#ffffff) hoặc rgba(255,255,255,.8). Để trống để dùng màu mặc định.</p>
     </div>
   );
 }

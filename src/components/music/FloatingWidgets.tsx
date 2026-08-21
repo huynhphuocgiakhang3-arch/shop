@@ -87,7 +87,7 @@ function MusicPanel({ onClose }: { onClose: () => void }) {
     >
       <div className="flex items-center justify-between">
         <p className="text-small font-medium text-white/90">Music</p>
-        <button onClick={onClose} className="text-white/40 hover:text-white">
+        <button onClick={onClose} className="text-white/40 hover:text-white" aria-label="Đóng trình phát nhạc">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -102,22 +102,23 @@ function MusicPanel({ onClose }: { onClose: () => void }) {
       )}
 
       <div className="flex items-center justify-center gap-4">
-        <button onClick={toggleShuffle} className={cn("text-white/40 hover:text-white", isShuffle && "text-accent-orange")}>
+        <button onClick={toggleShuffle} className={cn("text-white/40 hover:text-white", isShuffle && "text-accent-orange")} aria-label={isShuffle ? "Tắt phát ngẫu nhiên" : "Bật phát ngẫu nhiên"} aria-pressed={isShuffle}>
           <Shuffle className="h-4 w-4" />
         </button>
-        <button onClick={previous} className="text-white/70 hover:text-white">
+        <button onClick={previous} className="text-white/70 hover:text-white" aria-label="Bài trước">
           <SkipBack className="h-5 w-5" />
         </button>
         <button
           onClick={() => (current ? toggle() : play())}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-orange text-black hover:brightness-110"
+          aria-label={isPlaying ? "Tạm dừng" : "Phát nhạc"}
         >
           {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 pl-0.5" />}
         </button>
-        <button onClick={next} className="text-white/70 hover:text-white">
+        <button onClick={next} className="text-white/70 hover:text-white" aria-label="Bài tiếp theo">
           <SkipForward className="h-5 w-5" />
         </button>
-        <button onClick={toggleRepeat} className={cn("text-white/40 hover:text-white", isRepeat && "text-accent-orange")}>
+        <button onClick={toggleRepeat} className={cn("text-white/40 hover:text-white", isRepeat && "text-accent-orange")} aria-label={isRepeat ? "Tắt lặp lại" : "Bật lặp lại"} aria-pressed={isRepeat}>
           <Repeat className="h-4 w-4" />
         </button>
       </div>

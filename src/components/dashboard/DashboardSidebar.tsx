@@ -51,7 +51,7 @@ export function DashboardSidebar() {
       </nav>
       {isStaff && <Link href="/admin" onClick={() => mobile && setMobileOpen(false)} className="mb-2 mt-3 flex min-h-11 items-center gap-3 rounded-xl border border-accent-orange/20 bg-accent-orange/[.06] px-3 py-2.5 text-small text-accent-orange"><ShieldCheck className="h-[18px] w-[18px] shrink-0" />{(!collapsed || mobile) && <span>Quản trị</span>}</Link>}
       <Link href="/" onClick={() => mobile && setMobileOpen(false)} className="mb-1 flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-small text-white/45 hover:bg-white/[.04] hover:text-white/75"><Store className="h-[18px] w-[18px] shrink-0" />{(!collapsed || mobile) && <span>Về trưng bày</span>}</Link>
-      <button onClick={handleLogout} className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-small text-white/40 hover:bg-state-danger/10 hover:text-state-danger"><LogOut className="h-[18px] w-[18px] shrink-0" />{(!collapsed || mobile) && <span>Đăng xuất</span>}</button>
+      <button onClick={handleLogout} aria-label="Đăng xuất" className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-small text-white/40 hover:bg-state-danger/10 hover:text-state-danger"><LogOut className="h-[18px] w-[18px] shrink-0" />{(!collapsed || mobile) && <span>Đăng xuất</span>}</button>
     </aside>
   );
 

@@ -19,6 +19,7 @@ export interface SiteSettings {
   heroVariantLine: string;
   heroVaultLine: string;
   heroDescription: string | null;
+  heroDescriptionColor: string | null;
   heroPrimaryCta: string;
   heroSecondaryCta: string;
   memberDisplay: string | null;

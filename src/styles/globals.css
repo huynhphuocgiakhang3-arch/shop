@@ -203,6 +203,7 @@ html.theme-light .text-white\/15 { color: rgba(17,24,39,.15) !important; }
 html.theme-light .text-white\/28 { color: rgba(17,24,39,.28) !important; }
 html.theme-light .text-white\/42 { color: rgba(17,24,39,.42) !important; }
 html.theme-light .text-white\/95 { color: rgba(17,24,39,.95) !important; }
+html.theme-light .text-white\/78 { color: rgba(17,24,39,.78) !important; }
 
 
 
@@ -358,7 +359,7 @@ html.theme-light .khv-atmosphere::after { background: radial-gradient(circle, rg
   .khv-control-button { width: 42px !important; height: 42px !important; }
   .khv-language-button { height: 42px !important; min-width: 52px; justify-content:center; padding: 0 9px !important; }
   .khv-display-controls svg { flex:none; }
-  .khv-hero-title { font-size: clamp(2.65rem, 13vw, 4.5rem) !important; line-height: .92 !important; letter-spacing: -.055em !important; }
+  .khv-hero-title { font-size: clamp(2.65rem, 13vw, 4.5rem) !important; line-height: .98 !important; letter-spacing: -.02em !important; }
   .khv-hero-headline { min-height: 1.05em !important; display:flex !important; align-items:flex-start; justify-content:center; }
   .khv-hero-title + p { font-size: 14px !important; line-height: 1.65 !important; margin-top: 20px !important; }
   .khv-announcement { max-width: calc(100vw - 24px) !important; padding: 9px 13px !important; font-size: 9px !important; }

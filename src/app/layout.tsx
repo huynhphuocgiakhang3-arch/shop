@@ -6,6 +6,7 @@ import { getFreshSessionUser } from "@/lib/auth/session";
 import { getSiteSettings } from "@/lib/settings";
 import { MaintenancePage } from "@/components/maintenance/MaintenancePage";
 import { SiteChrome } from "@/components/layout/SiteChrome";
+import { RouteTransition } from "@/components/layout/RouteTransition";
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://khanghuynhvault.vercel.app").replace(/\/$/, "");
 
@@ -57,7 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <MaintenancePage message={settings.maintenanceMessage} />
           ) : (
             <>
-              {children}
+              <RouteTransition>{children}</RouteTransition>
               <SiteChrome />
             </>
           )}

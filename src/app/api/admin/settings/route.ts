@@ -42,6 +42,15 @@ const TEXT_FIELDS = [
   "fiveStarDisplay"
 ] as const;
 
+// CSS custom-color fields get their own light validation (basic shape
+// check) rather than going through the generic TEXT_FIELDS path — a
+// malformed value here would silently render as invisible/broken text
+// color rather than a visible error, so it's worth rejecting garbage
+// up front instead of trusting the browser's color input to always send
+// something well-formed.
+const COLOR_FIELD_PATTERN = /^(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\)|[a-zA-Z]+)$/;
+const COLOR_FIELDS = ["heroDescriptionColor"] as const;
+
 export async function PATCH(req: NextRequest) {
   try {
     const { user, response } = await requireSuperAdmin();
@@ -82,6 +91,16 @@ export async function PATCH(req: NextRequest) {
         const value = body[field];
         if (value !== null && typeof value !== "string") {
           return jsonError(`${field} không hợp lệ.`, 422);
+        }
+        patch[field] = value === "" ? null : value;
+      }
+    }
+
+    for (const field of COLOR_FIELDS) {
+      if (field in body) {
+        const value = body[field];
+        if (value !== null && value !== "" && (typeof value !== "string" || !COLOR_FIELD_PATTERN.test(value.trim()))) {
+          return jsonError(`${field} phải là mã màu hợp lệ (vd: #ffffff hoặc rgba(255,255,255,.7)).`, 422);
         }
         patch[field] = value === "" ? null : value;
       }

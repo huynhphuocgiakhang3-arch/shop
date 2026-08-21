@@ -27,6 +27,7 @@ export type HeroSettings = {
   heroVariantLine?: string;
   heroVaultLine?: string;
   heroDescription?: string | null;
+  heroDescriptionColor?: string | null;
   heroPrimaryCta?: string;
   heroSecondaryCta?: string;
 };
@@ -80,7 +81,7 @@ export function Hero({ settings }: { settings?: HeroSettings }) {
             initial={{ opacity: 0, y: 24, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="khv-hero-title max-w-4xl text-[clamp(2.6rem,7vw,7rem)] font-semibold leading-[.94] tracking-[-.055em] text-white"
+            className="khv-hero-title max-w-4xl text-[clamp(2.6rem,7vw,7rem)] font-bold leading-[1.02] tracking-[-.02em] text-white"
           >
             {primary}
             <br />
@@ -93,7 +94,10 @@ export function Hero({ settings }: { settings?: HeroSettings }) {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.18 }}
-            className="mx-auto mt-7 max-w-2xl text-[15px] leading-7 text-white/70 sm:text-[17px] lg:mx-0"
+            style={settings?.heroDescriptionColor ? { color: settings.heroDescriptionColor } : undefined}
+            className={`khv-hero-description mx-auto mt-7 max-w-2xl text-[15px] leading-7 sm:text-[17px] lg:mx-0 ${
+              settings?.heroDescriptionColor ? "" : "text-white/78"
+            }`}
           >
             {description}
           </motion.p>

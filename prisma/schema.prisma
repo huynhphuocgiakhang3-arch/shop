@@ -482,6 +482,10 @@ model SiteSettings {
   heroVariantLine      String   @default("File/Tool hiện đại")
   heroVaultLine        String   @default("Đẳng cấp Vault.")
   heroDescription      String?
+  // Free-text CSS color (hex/rgba) — lets Super Admin fix low-contrast text
+  // without needing a redeploy. Empty/null falls back to the safe default
+  // (rgba(255,255,255,.70)) baked into the frontend.
+  heroDescriptionColor String?
   heroPrimaryCta       String   @default("Khám phá Marketplace")
   heroSecondaryCta     String   @default("Mở Vault")
   memberDisplay        String?

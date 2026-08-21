@@ -1,13 +1,40 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring, useTransform, useReducedMotion, useScroll } from "framer-motion";
 
+// Five rings at varied depths/angles instead of three — reads less like "a
+// planet with one moon" and more like an orrery/armillary-sphere mechanism.
+// Each carries 1-3 tick nodes (not just a single dot) so the rings look
+// like measured instrument bands, not decorative circles.
 const ORBITS = [
-  { size: "h-[86%] w-[86%]", duration: 20, z: 14, color: "orange" },
-  { size: "h-[70%] w-[70%]", duration: 15, z: 30, color: "blue" },
-  { size: "h-[54%] w-[54%]", duration: 11, z: 46, color: "orange" },
+  { size: "h-[92%] w-[92%]", duration: 26, z: 6, color: "orange", rx: 76, ry: -14, nodes: 1 },
+  { size: "h-[78%] w-[78%]", duration: 19, z: 22, color: "blue", rx: 62, ry: 18, nodes: 2 },
+  { size: "h-[64%] w-[64%]", duration: 32, z: 38, color: "orange", rx: 70, ry: -22, nodes: 1 },
+  { size: "h-[50%] w-[50%]", duration: 14, z: 52, color: "blue", rx: 58, ry: 10, nodes: 3 },
 ];
+
+// Faceted wireframe "cage" panels around the glass core — a handful of
+// rotated hexagon outlines at different depths/angles read as a geodesic
+// lattice enclosing the core, the detail that separates "one glowing ball"
+// from "an engineered containment mechanism."
+const CAGE_FACETS = [
+  { rx: 14, ry: 0, rz: 0, z: 92 },
+  { rx: -10, ry: 22, rz: 0, z: 92 },
+  { rx: 6, ry: -24, rz: 12, z: 92 }
+];
+
+const HEX_CLIP = "polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)";
+
+function useTelemetry(reducedMotion: boolean | null) {
+  const [hex, setHex] = useState("A3F1");
+  useEffect(() => {
+    if (reducedMotion) return;
+    const id = setInterval(() => setHex(Math.floor(Math.random() * 0xffff).toString(16).toUpperCase().padStart(4, "0")), 1400);
+    return () => clearInterval(id);
+  }, [reducedMotion]);
+  return hex;
+}
 
 // Every offset below is expressed in % of the core's own box (never a fixed
 // px value that could push content past the container edge), so nothing can
@@ -16,6 +43,7 @@ const ORBITS = [
 export function VaultCore3D() {
   const reducedMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
+  const telemetry = useTelemetry(reducedMotion);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   // Rotation range is intentionally modest (±11°) — with `translateZ` +
@@ -27,6 +55,7 @@ export function VaultCore3D() {
   const glowX = useTransform(x, [-0.5, 0.5], [32, 68]);
   const glowY = useTransform(y, [-0.5, 0.5], [32, 68]);
   const sheenOpacity = useTransform(x, [-0.5, 0, 0.5], [0.15, 0.55, 0.15]);
+  const dialRotate = useTransform(x, [-0.5, 0.5], [-6, 6]);
 
   // "Camera" scroll response — as the hero scrolls up out of view, the core
   // drifts and turns away slightly and settles deeper into the scene
@@ -81,7 +110,7 @@ export function VaultCore3D() {
       aria-label="KhangHuynh Vault — mô hình 3D tương tác, có thể chạm và kéo để xoay"
       role="img"
     >
-      {/* Ambient light pools */}
+      {/* Ambient light pools — two-tone (orange key + faint blue rim) instead of a single flat glow */}
       <motion.div
         style={{ left: glowX, top: glowY }}
         className="pointer-events-none absolute h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-orange/20 blur-3xl sm:h-44 sm:w-44"
@@ -90,34 +119,105 @@ export function VaultCore3D() {
       {/* Studio floor reflection — grounds the object instead of it floating in a void */}
       <div className="pointer-events-none absolute inset-x-[10%] bottom-[6%] h-[22%] rounded-[100%] bg-[radial-gradient(ellipse,rgba(255,138,61,.16),transparent_72%)] blur-xl" />
 
+      {/* Radar-dial tick ring — a thin conic band of measured ticks around the
+          whole scene, the single cheapest detail that reads as "engineered
+          instrument" rather than "decorative circle". Rotates a few degrees
+          with the pointer for a parallax "compass" feel. */}
+      <motion.div
+        style={{ rotate: dialRotate }}
+        className="pointer-events-none absolute inset-[1%] rounded-full opacity-[.35] sm:opacity-[.4]"
+      >
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: "repeating-conic-gradient(rgba(255,255,255,.5) 0deg 1.2deg, transparent 1.2deg 9deg)",
+            WebkitMaskImage: "radial-gradient(circle, transparent 96.5%, black 97%, black 99%, transparent 99.5%)",
+            maskImage: "radial-gradient(circle, transparent 96.5%, black 97%, black 99%, transparent 99.5%)"
+          }}
+        />
+      </motion.div>
+
+      {/* Corner reticle brackets — the classic "targeting frame" cue borrowed
+          from AR/HUD interfaces. Cheap, restrained, instantly reads as
+          purposeful tech framing rather than an empty box. */}
+      {(["top-2 left-2 border-t border-l", "top-2 right-2 border-t border-r", "bottom-2 left-2 border-b border-l", "bottom-2 right-2 border-b border-r"] as const).map(
+        (pos) => (
+          <div key={pos} className={`pointer-events-none absolute h-4 w-4 border-accent-orange/25 sm:h-5 sm:w-5 ${pos}`} />
+        )
+      )}
+
       <motion.div style={{ rotateX, rotateY }} className="absolute inset-0 [transform-style:preserve-3d]">
         {ORBITS.map((orbit, index) => (
-          <motion.div
-            key={index}
-            animate={reducedMotion ? undefined : { rotate: 360 }}
-            transition={reducedMotion ? undefined : { duration: orbit.duration, repeat: Infinity, ease: "linear", delay: -index * 1.9 }}
-            className={`absolute left-1/2 top-1/2 ${orbit.size} -translate-x-1/2 -translate-y-1/2 rounded-full border ${
-              orbit.color === "orange" ? "border-accent-orange/20" : "border-accent-blue/15"
-            } [transform-style:preserve-3d]`}
-            style={{ transform: `translateZ(${orbit.z}px) rotateX(${index % 2 ? 66 : 74}deg) rotateY(${index % 2 ? 16 : -16}deg)` }}
-          >
-            <span
-              className={`absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 rounded-full sm:h-2.5 sm:w-2.5 ${
-                orbit.color === "orange"
-                  ? "bg-accent-orange shadow-[0_0_20px_6px_rgba(255,138,61,.34)]"
-                  : "bg-accent-blue shadow-[0_0_18px_5px_rgba(78,145,255,.25)]"
+          // Positioning (center + size) lives on this plain wrapper via
+          // ordinary Tailwind transform utilities. The 3D rotate/translateZ
+          // below goes on an INNER element instead of sharing this one —
+          // React's `style={{ transform: ... }}` completely replaces the
+          // whole `transform` property, including the `-translate-x-1/2
+          // -translate-y-1/2` centering from the className, if both land on
+          // the same node. That silent conflict was quietly shifting every
+          // ring/facet off-center (confirmed by bundling the real component
+          // and measuring it in a browser — the flat mockups used in
+          // earlier verification passes never would have caught this).
+          <div key={index} className={`absolute left-1/2 top-1/2 ${orbit.size} -translate-x-1/2 -translate-y-1/2 [transform-style:preserve-3d]`}>
+            <motion.div
+              animate={reducedMotion ? undefined : { rotate: 360 }}
+              transition={reducedMotion ? undefined : { duration: orbit.duration, repeat: Infinity, ease: "linear", delay: -index * 3.1 }}
+              className={`relative h-full w-full rounded-full border [transform-style:preserve-3d] ${
+                orbit.color === "orange" ? "border-accent-orange/[.18]" : "border-accent-blue/[.14]"
               }`}
-            />
-          </motion.div>
+              style={{ transform: `translateZ(${orbit.z}px) rotateX(${orbit.rx}deg) rotateY(${orbit.ry}deg)` }}
+            >
+              {Array.from({ length: orbit.nodes }).map((_, ni) => (
+                <span
+                  key={ni}
+                  className={`absolute h-1.5 w-1.5 -translate-x-1/2 rounded-full sm:h-2 sm:w-2 ${
+                    orbit.color === "orange"
+                      ? "bg-accent-orange shadow-[0_0_16px_5px_rgba(255,138,61,.32)]"
+                      : "bg-accent-blue shadow-[0_0_14px_4px_rgba(78,145,255,.24)]"
+                  }`}
+                  style={{ left: `${50 + ni * (100 / (orbit.nodes + 0.6))}%`, top: 0 }}
+                />
+              ))}
+            </motion.div>
+          </div>
         ))}
 
+        {/* Faceted wireframe cage — hexagonal outlines at staggered depths
+            enclosing the glass core, suggesting a containment lattice rather
+            than a bare sphere. Same wrapper/inner split as the orbits above,
+            for the same reason. */}
+        {CAGE_FACETS.map((facet, i) => (
+          <div key={`cage-${i}`} className="absolute left-1/2 top-1/2 h-[58%] w-[58%] -translate-x-1/2 -translate-y-1/2 sm:h-72 sm:w-72">
+            <motion.div
+              animate={reducedMotion ? undefined : { rotateZ: [facet.rz, facet.rz + 360] }}
+              transition={reducedMotion ? undefined : { duration: 34 + i * 9, repeat: Infinity, ease: "linear" }}
+              className="h-full w-full border border-white/[.12]"
+              style={{
+                transform: `translateZ(${facet.z}px) rotateX(${facet.rx}deg) rotateY(${facet.ry}deg)`,
+                clipPath: HEX_CLIP
+              }}
+            />
+          </div>
+        ))}
+
+        <div className="absolute left-1/2 top-1/2 h-[46%] w-[46%] -translate-x-1/2 -translate-y-1/2 [transform-style:preserve-3d] sm:h-64 sm:w-64 lg:h-72 lg:w-72">
         <motion.div
           animate={reducedMotion ? undefined : { y: [0, -8, 0], rotateZ: [0, 1.4, -1, 0] }}
           transition={reducedMotion ? undefined : { duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute left-1/2 top-1/2 h-[46%] w-[46%] -translate-x-1/2 -translate-y-1/2 [transform-style:preserve-3d] sm:h-64 sm:w-64 lg:h-72 lg:w-72"
+          className="relative h-full w-full [transform-style:preserve-3d]"
         >
           {/* Outer glass shell */}
           <div className="absolute inset-0 rounded-[32px] border border-white/20 bg-gradient-to-br from-white/[.20] via-white/[.04] to-accent-orange/[.12] shadow-[inset_0_1px_0_rgba(255,255,255,.45),0_40px_100px_rgba(0,0,0,.5),0_0_80px_rgba(255,138,61,.14)] backdrop-blur-2xl [transform:translateZ(14px)] sm:rounded-[42px]" />
+          {/* Fine blueprint grid on the shell — the texture that reads as
+              "engineered surface" instead of flat gradient glass. */}
+          <div
+            className="absolute inset-[9%] rounded-[26px] opacity-[.14] [transform:translateZ(15px)] sm:rounded-[34px]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.7) 1px, transparent 1px)",
+              backgroundSize: "12% 12%"
+            }}
+          />
           {/* Moving specular sheen — the thing that reads as "glass" instead of flat gradient */}
           <motion.div
             style={{ opacity: sheenOpacity }}
@@ -150,7 +250,14 @@ export function VaultCore3D() {
             <p className="text-[7.5px] font-bold uppercase tracking-[.14em] text-accent-orange sm:text-[9px] sm:tracking-[.18em]">Digital assets</p>
             <p className="mt-0.5 text-[10px] text-white/60 sm:mt-1 sm:text-xs">Sẵn sàng khám phá</p>
           </div>
+          {/* Telemetry readout — a small ticking hex value in the free corner.
+              Pure flavor (not real data), but it's the detail that makes an
+              instrument panel feel alive and "engineered" rather than static. */}
+          <div className="absolute left-[2%] top-[8%] hidden font-mono text-[8px] tracking-wide text-white/25 [transform:translateZ(60px)] sm:block">
+            0x{telemetry}
+          </div>
         </motion.div>
+        </div>
 
         {Array.from({ length: 8 }).map((_, index) => (
           <motion.span
