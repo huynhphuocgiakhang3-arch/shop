@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import type { ProductCardData } from "@/components/home/ProductCard";
 
@@ -77,5 +77,24 @@ export function useCategories() {
           children?: { id: string; slug: string; name: string; _count: { products: number } }[];
         }[];
       }>("/api/categories")
+  });
+}
+
+export interface ReviewResponse {
+  review: {
+    id: string;
+    rating: number;
+    comment: string | null;
+    isVerified: boolean;
+    createdAt: string;
+    user: { displayName: string; avatarUrl: string | null };
+  };
+}
+
+export function useCreateReview(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { rating: number; comment?: string }) => api.post<ReviewResponse>(`/api/products/${slug}/reviews`, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["product", slug] })
   });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform, useReducedMotion, useScroll } from "framer-motion";
 
 const ORBITS = [
   { size: "h-[86%] w-[86%]", duration: 20, z: 14, color: "orange" },
@@ -15,6 +15,7 @@ const ORBITS = [
 // bug that made this look broken on mobile before.
 export function VaultCore3D() {
   const reducedMotion = useReducedMotion();
+  const containerRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   // Rotation range is intentionally modest (±11°) — with `translateZ` +
@@ -26,6 +27,15 @@ export function VaultCore3D() {
   const glowX = useTransform(x, [-0.5, 0.5], [32, 68]);
   const glowY = useTransform(y, [-0.5, 0.5], [32, 68]);
   const sheenOpacity = useTransform(x, [-0.5, 0, 0.5], [0.15, 0.55, 0.15]);
+
+  // "Camera" scroll response — as the hero scrolls up out of view, the core
+  // drifts and turns away slightly and settles deeper into the scene
+  // (translateZ pulls back + fades), reading as a cinematic camera move
+  // rather than the object simply disappearing off the top of the page.
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end start"] });
+  const scrollRotateX = useTransform(scrollYProgress, [0, 1], [0, reducedMotion ? 0 : -14]);
+  const scrollScale = useTransform(scrollYProgress, [0, 1], [1, reducedMotion ? 1 : 0.88]);
+  const scrollOpacity = useTransform(scrollYProgress, [0, 0.85, 1], [1, 1, reducedMotion ? 1 : 0.35]);
 
   const dragging = useRef(false);
 
@@ -42,7 +52,9 @@ export function VaultCore3D() {
   );
 
   return (
-    <div
+    <motion.div
+      ref={containerRef}
+      style={{ scale: scrollScale, opacity: scrollOpacity, rotateX: scrollRotateX, transformPerspective: 1400 }}
       className="khv-vault-3d relative mx-auto h-[320px] w-full max-w-[560px] touch-none select-none [perspective:1400px] sm:h-[480px] sm:max-w-[620px] lg:h-[560px]"
       onPointerMove={(event) => {
         if (reducedMotion) return;
@@ -155,6 +167,6 @@ export function VaultCore3D() {
       <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-medium uppercase tracking-[.2em] text-white/25 sm:hidden">
         Chạm để xoay
       </div>
-    </div>
+    </motion.div>
   );
 }

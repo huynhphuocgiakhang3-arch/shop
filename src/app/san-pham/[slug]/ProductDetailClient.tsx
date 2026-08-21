@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Star, Heart, ShoppingCart, Download, ShieldCheck, ChevronLeft } from "lucide-react";
+import { Star, Heart, ShoppingCart, Download, ShieldCheck, ChevronLeft, PencilLine } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "@/components/home/ProductCard";
-import { useProduct, type ProductDetailResponse } from "@/hooks/useProducts";
+import { useProduct, useCreateReview, type ProductDetailResponse } from "@/hooks/useProducts";
 import { useAddToCart } from "@/hooks/useCart";
 import { useToggleFavorite } from "@/hooks/useFavorites";
 import { useCurrentUser } from "@/hooks/useProfile";
@@ -29,6 +29,7 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
   const toggleFavorite = useToggleFavorite();
   const { show } = useToast();
   const [activeImage, setActiveImage] = useState(0);
+  const [justReviewed, setJustReviewed] = useState(false);
 
   const payload = data ?? initialData;
   const { product, related, isFavorited, hasPurchased } = payload;
@@ -194,6 +195,23 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
 
       <div className="mt-10">
         <h2 className="mb-4 text-title text-white">Đánh giá ({product.reviews.length})</h2>
+
+        {/* The write-review API has existed since before this session but had
+            no UI anywhere to call it — purchasers could see reviews but
+            never leave one. `hasPurchased` gates eligibility; if someone
+            already reviewed in a past session the API's own duplicate check
+            (409) catches it and we just surface that message, rather than
+            trying to match reviewer identity client-side (the reviews list
+            only carries a display name, not a user id, so that match would
+            be unreliable anyway). */}
+        {hasPurchased && !justReviewed && <ReviewForm slug={slug} onSubmitted={() => setJustReviewed(true)} />}
+        {justReviewed && (
+          <GlassPanel radius="md" className="mb-4 flex items-center gap-2.5 p-4">
+            <Star className="h-4 w-4 shrink-0 fill-accent-orange text-accent-orange" />
+            <p className="text-small text-white/70">Cảm ơn bạn đã đánh giá sản phẩm!</p>
+          </GlassPanel>
+        )}
+
         {product.reviews.length === 0 ? (
           <p className="text-small text-white/40">Chưa có đánh giá nào cho sản phẩm này.</p>
         ) : (
@@ -229,5 +247,74 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
         </div>
       )}
     </>
+  );
+}
+
+function ReviewForm({ slug, onSubmitted }: { slug: string; onSubmitted: () => void }) {
+  const createReview = useCreateReview(slug);
+  const { show } = useToast();
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+
+  const handleSubmit = () => {
+    if (rating < 1) {
+      show("Vui lòng chọn số sao đánh giá.", "info");
+      return;
+    }
+    createReview.mutate(
+      { rating, comment: comment.trim() || undefined },
+      {
+        onSuccess: () => {
+          show("Đã gửi đánh giá của bạn.", "success");
+          onSubmitted();
+        },
+        onError: (err) => show(err instanceof ApiError ? err.message : "Không thể gửi đánh giá. Vui lòng thử lại.", "error")
+      }
+    );
+  };
+
+  return (
+    <GlassPanel radius="md" className="mb-4 flex flex-col gap-3 p-5">
+      <div className="flex items-center gap-2">
+        <PencilLine className="h-4 w-4 text-accent-orange" />
+        <p className="text-small font-semibold text-white/85">Bạn đã mua sản phẩm này — chia sẻ đánh giá nhé</p>
+      </div>
+
+      <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Chọn số sao đánh giá">
+        {Array.from({ length: 5 }).map((_, i) => {
+          const value = i + 1;
+          const filled = value <= (hoverRating || rating);
+          return (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={rating === value}
+              aria-label={`${value} sao`}
+              onClick={() => setRating(value)}
+              onMouseEnter={() => setHoverRating(value)}
+              onMouseLeave={() => setHoverRating(0)}
+              className="khv-touch-target flex h-9 w-9 items-center justify-center"
+            >
+              <Star className={cn("h-6 w-6 transition-colors", filled ? "fill-accent-orange text-accent-orange" : "text-white/20")} />
+            </button>
+          );
+        })}
+      </div>
+
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        maxLength={2000}
+        rows={3}
+        placeholder="Cảm nhận của bạn về sản phẩm (không bắt buộc)..."
+        className="w-full resize-none rounded-2xl border border-white/10 bg-white/[.03] p-3 text-small text-white outline-none placeholder:text-white/30 focus:border-accent-orange/50"
+      />
+
+      <Button className="khv-touch-target w-fit" onClick={handleSubmit} isLoading={createReview.isPending}>
+        Gửi đánh giá
+      </Button>
+    </GlassPanel>
   );
 }

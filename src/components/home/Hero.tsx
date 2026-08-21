@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AnimatedHeadline } from "@/components/ui/AnimatedHeadline";
+import { AtmosphereField } from "./AtmosphereField";
 
 // The 3D vault core is decorative: it loads only on the client, after
 // hydration, so it never blocks first paint or the LCP headline.
@@ -48,6 +49,7 @@ export function Hero({ settings }: { settings?: HeroSettings }) {
 
   return (
     <section className="khv-atmosphere relative isolate overflow-hidden px-4 pb-16 pt-8 sm:px-8 sm:pb-24 sm:pt-12 lg:pb-28 lg:pt-16">
+      <AtmosphereField />
       {settings?.announcementEnabled !== false && (
         <div className="mx-auto mb-8 flex max-w-[1380px] justify-center">
           <div className="khv-announcement inline-flex max-w-full items-center gap-2 rounded-full border border-accent-orange/20 bg-white/[.04] px-4 py-2 text-[10px] font-bold uppercase tracking-[.18em] text-white/60 backdrop-blur-xl">
