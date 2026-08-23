@@ -489,6 +489,12 @@ model SiteSettings {
   // Same idea, for the rotating headline ("File/Tool hiện đại" etc.) — a
   // plain solid color that replaces the default orange gradient when set.
   heroHeadlineColor    String?
+  // Newline-separated extra phrases for the rotating headline, beyond the
+  // two CMS "primary/vault" lines. Kept as free text rather than more rigid
+  // schema fields so Super Admin can add/remove/reorder any number of
+  // phrases without needing a migration each time. Empty → falls back to
+  // the three built-in defaults baked into the frontend.
+  heroRotatingPhrasesExtra String?
   heroPrimaryCta       String   @default("Khám phá Marketplace")
   heroSecondaryCta     String   @default("Mở Vault")
   memberDisplay        String?

@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
+import { EASE_PREMIUM } from "@/lib/motion";
 
 /**
  * Wraps every route's content so navigating anywhere in the app gets a
@@ -30,7 +31,7 @@ export function RouteTransition({ children }: { children: React.ReactNode }) {
       key={pathname}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.18, ease: EASE_PREMIUM }}
     >
       {children}
     </motion.div>

@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
+import { EASE_PREMIUM } from "@/lib/motion";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -50,7 +51,7 @@ export function ConfirmDialog({
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.2, ease: EASE_PREMIUM }}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-sm"
           >

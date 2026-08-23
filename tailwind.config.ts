@@ -77,6 +77,9 @@ const config: Config = {
         entrance: "1400ms"
       },
       transitionTimingFunction: {
+        // Keep this in sync with EASE_PREMIUM in src/lib/motion.ts and
+        // --khv-ease-premium in globals.css — same curve, three different
+        // places it's needed (Tailwind utilities, Framer Motion, plain CSS).
         premium: "cubic-bezier(0.22, 1, 0.36, 1)"
       },
       keyframes: {

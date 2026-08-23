@@ -21,6 +21,7 @@ export interface SiteSettings {
   heroDescription: string | null;
   heroDescriptionColor: string | null;
   heroHeadlineColor: string | null;
+  heroRotatingPhrasesExtra: string | null;
   heroPrimaryCta: string;
   heroSecondaryCta: string;
   memberDisplay: string | null;

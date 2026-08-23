@@ -17,7 +17,7 @@ export function ReviewsSection({ reviews }: { reviews: ReviewCardData[] }) {
       <h2 className="mb-8 text-h2 font-display text-white">Khách hàng nói gì</h2>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {reviews.map((review) => (
-          <div key={review.id} className="glass-surface flex flex-col gap-3 rounded-[24px] p-6 shadow-[0_20px_70px_rgba(0,0,0,.18)]">
+          <div key={review.id} className="glass-surface flex flex-col gap-3 rounded-lg p-6 shadow-[0_20px_70px_rgba(0,0,0,.18)]">
             <div className="flex items-center gap-1">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star

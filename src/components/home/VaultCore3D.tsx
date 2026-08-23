@@ -207,7 +207,7 @@ export function VaultCore3D() {
           className="relative h-full w-full [transform-style:preserve-3d]"
         >
           {/* Outer glass shell */}
-          <div className="absolute inset-0 rounded-[32px] border border-white/20 bg-gradient-to-br from-white/[.20] via-white/[.04] to-accent-orange/[.12] shadow-[inset_0_1px_0_rgba(255,255,255,.45),0_40px_100px_rgba(0,0,0,.5),0_0_80px_rgba(255,138,61,.14)] backdrop-blur-2xl [transform:translateZ(14px)] sm:rounded-[42px]" />
+          <div className="absolute inset-0 rounded-xl border border-white/20 bg-gradient-to-br from-white/[.20] via-white/[.04] to-accent-orange/[.12] shadow-[inset_0_1px_0_rgba(255,255,255,.45),0_40px_100px_rgba(0,0,0,.5),0_0_80px_rgba(255,138,61,.14)] backdrop-blur-2xl [transform:translateZ(14px)] sm:rounded-[42px]" />
           {/* Fine blueprint grid on the shell — the texture that reads as
               "engineered surface" instead of flat gradient glass. */}
           <div
@@ -221,7 +221,7 @@ export function VaultCore3D() {
           {/* Moving specular sheen — the thing that reads as "glass" instead of flat gradient */}
           <motion.div
             style={{ opacity: sheenOpacity }}
-            className="absolute inset-0 overflow-hidden rounded-[32px] [transform:translateZ(15px)] sm:rounded-[42px]"
+            className="absolute inset-0 overflow-hidden rounded-xl [transform:translateZ(15px)] sm:rounded-[42px]"
           >
             <div className="absolute -inset-y-4 -left-1/2 w-1/2 rotate-12 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
           </motion.div>

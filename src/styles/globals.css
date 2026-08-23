@@ -12,6 +12,12 @@
   --khv-orange-2: #ffb067;
   --khv-green: #43e59a;
   --khv-blue: #4f9cff;
+  /* Single source of truth for the site's signature motion curve — mirrors
+     EASE_PREMIUM in src/lib/motion.ts (used by Framer Motion components)
+     and ease-premium in tailwind.config.ts. Previously this exact
+     cubic-bezier was duplicated as a literal value 8+ times across this
+     file; tuning the site's motion feel meant hunting down every one. */
+  --khv-ease-premium: cubic-bezier(.22, 1, .36, 1);
 }
 
 * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: rgba(255,138,61,.34) transparent; }
@@ -87,12 +93,12 @@ button, a { touch-action: manipulation; }
 }
 
 /* Premium interaction language used throughout the application. */
-.khv-interactive { transition: transform .22s cubic-bezier(.22,1,.36,1), border-color .22s ease, background-color .22s ease, box-shadow .22s ease, color .22s ease; }
+.khv-interactive { transition: transform .22s var(--khv-ease-premium), border-color .22s ease, background-color .22s ease, box-shadow .22s ease, color .22s ease; }
 .khv-interactive:hover { transform: translateY(-2px); }
 .khv-interactive:active { transform: translateY(0) scale(.985); }
 .khv-hover-glow:hover { border-color: rgba(255,138,61,.28) !important; box-shadow: 0 20px 70px rgba(0,0,0,.34), 0 0 40px rgba(255,138,61,.08), inset 0 1px 0 rgba(255,255,255,.10); }
 .khv-card-shine { position: relative; overflow: hidden; }
-.khv-card-shine::after { content:""; position:absolute; inset:-40% -20%; pointer-events:none; transform:translateX(-120%) rotate(18deg); background:linear-gradient(90deg,transparent,rgba(255,255,255,.09),transparent); transition:transform .8s cubic-bezier(.22,1,.36,1); }
+.khv-card-shine::after { content:""; position:absolute; inset:-40% -20%; pointer-events:none; transform:translateX(-120%) rotate(18deg); background:linear-gradient(90deg,transparent,rgba(255,255,255,.09),transparent); transition:transform .8s var(--khv-ease-premium); }
 .khv-card-shine:hover::after { transform:translateX(120%) rotate(18deg); }
 .khv-focus:focus-visible { outline: 2px solid var(--khv-orange); outline-offset: 3px; }
 
@@ -100,8 +106,8 @@ button, a { touch-action: manipulation; }
 @keyframes khv-float { 0%,100% { transform:translate3d(0,0,0); } 50% { transform:translate3d(0,-7px,0); } }
 @keyframes khv-pulse-ring { 0% { box-shadow:0 0 0 0 rgba(255,138,61,.22); } 70% { box-shadow:0 0 0 12px rgba(255,138,61,0); } 100% { box-shadow:0 0 0 0 rgba(255,138,61,0); } }
 @keyframes khv-shimmer { from { background-position:200% 0; } to { background-position:-200% 0; } }
-.page-enter { animation: khv-page-in .52s cubic-bezier(.22,1,.36,1) both; }
-.stagger-enter > * { animation: khv-page-in .52s cubic-bezier(.22,1,.36,1) both; }
+.page-enter { animation: khv-page-in .52s var(--khv-ease-premium) both; }
+.stagger-enter > * { animation: khv-page-in .52s var(--khv-ease-premium) both; }
 .stagger-enter > *:nth-child(1){animation-delay:40ms}.stagger-enter > *:nth-child(2){animation-delay:90ms}.stagger-enter > *:nth-child(3){animation-delay:140ms}.stagger-enter > *:nth-child(4){animation-delay:190ms}.stagger-enter > *:nth-child(5){animation-delay:240ms}.stagger-enter > *:nth-child(6){animation-delay:290ms}
 
 /* Image and form polish. */
@@ -294,11 +300,11 @@ html.theme-light ::selection { background: rgba(255,138,61,.20); color:#111827; 
 .khv-hero-orbit { animation: khv-orbit 7s ease-in-out infinite; }
 .khv-hero-orbit-delay { animation-delay: -2.5s; }
 @keyframes khv-orbit { 0%,100% { transform: translate3d(0,0,0) scale(1); opacity:.55; } 50% { transform: translate3d(28px,-18px,0) scale(1.35); opacity:1; } }
-.khv-category-card { min-height: 178px; transition: transform .38s cubic-bezier(.22,1,.36,1), border-color .38s ease, box-shadow .38s ease; }
+.khv-category-card { min-height: 178px; transition: transform .38s var(--khv-ease-premium), border-color .38s ease, box-shadow .38s ease; }
 .khv-category-card:hover { transform: translateY(-6px); border-color: rgba(255,138,61,.24); box-shadow: 0 30px 80px rgba(0,0,0,.26), 0 0 50px rgba(255,138,61,.06); }
-.khv-product-card { transition: transform .38s cubic-bezier(.22,1,.36,1), box-shadow .38s ease, border-color .38s ease; }
+.khv-product-card { transition: transform .38s var(--khv-ease-premium), box-shadow .38s ease, border-color .38s ease; }
 .khv-product-card:hover { box-shadow: 0 34px 100px rgba(0,0,0,.34), 0 0 50px rgba(255,138,61,.055); }
-.khv-product-card .khv-touch-target { transition: transform .22s cubic-bezier(.22,1,.36,1), border-color .22s ease, background .22s ease, box-shadow .22s ease; }
+.khv-product-card .khv-touch-target { transition: transform .22s var(--khv-ease-premium), border-color .22s ease, background .22s ease, box-shadow .22s ease; }
 .khv-product-card .khv-touch-target:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,.18); }
 .khv-product-card img { will-change: transform; }
 
@@ -336,7 +342,7 @@ html.theme-light .khv-product-card:hover { box-shadow: 0 30px 80px rgba(15,23,42
 }
 .khv-product-card { transform-style: preserve-3d; }
 .khv-product-card:hover .khv-card-depth { transform: translateZ(22px); }
-.khv-card-depth { transition: transform .45s cubic-bezier(.22,1,.36,1); }
+.khv-card-depth { transition: transform .45s var(--khv-ease-premium); }
 @keyframes khv-float-slow { 0%,100% { transform: translate3d(0,0,0) rotate(-1deg); } 50% { transform: translate3d(0,-10px,0) rotate(1deg); } }
 .khv-float-slow { animation: khv-float-slow 7s ease-in-out infinite; }
 @media (max-width: 640px) {

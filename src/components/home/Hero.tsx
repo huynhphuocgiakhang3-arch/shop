@@ -29,6 +29,7 @@ export type HeroSettings = {
   heroDescription?: string | null;
   heroDescriptionColor?: string | null;
   heroHeadlineColor?: string | null;
+  heroRotatingPhrasesExtra?: string | null;
   heroPrimaryCta?: string;
   heroSecondaryCta?: string;
 };
@@ -43,9 +44,17 @@ export function Hero({ settings }: { settings?: HeroSettings }) {
   const primaryCta = settings?.heroPrimaryCta || "Khám phá Marketplace";
   const secondaryCta = settings?.heroSecondaryCta || "Mở Vault";
 
-  // CMS-controlled lines stay first so admins keep editorial control; the
-  // brand's standing phrases continue the loop.
-  const phrases = [variant, vault, "Tài sản của bạn.", "Trải nghiệm khác biệt.", "Mua một lần. Sở hữu lâu dài."].filter(
+  // CMS-controlled lines stay first so admins keep editorial control. Extra
+  // rotating phrases are also CMS-editable (Super Admin → Giao diện,
+  // "Các dòng chữ chạy bổ sung") — previously these three were hard-coded
+  // and had no admin field at all, which is exactly why only the first two
+  // lines appeared editable.
+  const extraPhrases = (settings?.heroRotatingPhrasesExtra ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const DEFAULT_EXTRA_PHRASES = ["Tài sản của bạn.", "Trải nghiệm khác biệt.", "Mua một lần. Sở hữu lâu dài."];
+  const phrases = [variant, vault, ...(extraPhrases.length ? extraPhrases : DEFAULT_EXTRA_PHRASES)].filter(
     (line): line is string => Boolean(line && line.trim())
   );
 
@@ -66,7 +75,7 @@ export function Hero({ settings }: { settings?: HeroSettings }) {
         className="absolute inset-x-0 top-[-260px] -z-10 mx-auto h-[760px] max-w-[1200px] rounded-full bg-[radial-gradient(circle,rgba(255,138,61,.18),rgba(79,156,255,.07)_38%,transparent_70%)] blur-3xl"
       />
 
-      <div className="mx-auto grid max-w-[1440px] items-center gap-8 lg:grid-cols-[1.02fr_.98fr] lg:gap-2">
+      <div className="mx-auto grid max-w-[1380px] items-center gap-8 lg:grid-cols-[1.02fr_.98fr] lg:gap-2">
         <div className="relative z-10 text-center lg:text-left">
           <motion.p
             initial={{ opacity: 0, y: 12 }}

@@ -89,7 +89,7 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
         <div>
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] border border-white/[.08] bg-white/[.025] shadow-[0_24px_80px_rgba(0,0,0,.28)] sm:rounded-[28px]">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[.08] bg-white/[.025] shadow-[0_24px_80px_rgba(0,0,0,.28)] sm:rounded-[28px]">
             <Image
               src={images[activeImage] ?? product.thumbnailUrl}
               alt={product.name}

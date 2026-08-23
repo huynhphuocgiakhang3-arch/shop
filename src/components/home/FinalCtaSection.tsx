@@ -14,7 +14,7 @@ export function FinalCtaSection() {
 
   return (
     <RevealSection className="mx-auto w-full max-w-[1380px] px-4 py-16 sm:px-8 lg:py-24">
-      <div className="glass-surface khv-hover-glow relative overflow-hidden rounded-[32px] p-8 text-center sm:p-14">
+      <div className="glass-surface khv-hover-glow relative overflow-hidden rounded-xl p-8 text-center sm:p-14">
         <div
           className="pointer-events-none absolute inset-0 opacity-40"
           style={{ background: "radial-gradient(60% 60% at 50% 0%, rgba(255,122,26,0.16), transparent 70%)" }}

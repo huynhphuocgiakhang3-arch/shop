@@ -14,7 +14,7 @@ export function CategoriesGrid({ categories }: { categories: CategoryCardData[] 
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {categories.map((category, index) => (
-          <Link key={category.slug} href={`/san-pham?category=${category.slug}`} className="khv-category-card group glass-surface relative overflow-hidden rounded-[24px] p-5 sm:p-6">
+          <Link key={category.slug} href={`/san-pham?category=${category.slug}`} className="khv-category-card group glass-surface relative overflow-hidden rounded-lg p-5 sm:p-6">
             <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-accent-orange/10 blur-2xl transition duration-500 group-hover:bg-accent-orange/20" />
             <div className="relative flex items-start justify-between"><span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-accent-orange/15 bg-accent-orange/[.07] text-accent-orange transition duration-500 group-hover:scale-110 group-hover:rotate-3"><Package className="h-5 w-5" /></span><span className="text-[10px] font-bold tracking-[.16em] text-white/20">0{index + 1}</span></div>
             <div className="relative mt-8"><p className="text-[15px] font-semibold text-white/85 group-hover:text-white">{category.name}</p><div className="mt-2 flex items-center justify-between"><span className="text-[11px] text-white/35">{category._count.products} sản phẩm</span><ArrowUpRight className="h-4 w-4 text-white/20 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent-orange" /></div></div>

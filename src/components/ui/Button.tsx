@@ -4,6 +4,7 @@ import { ButtonHTMLAttributes, forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Loader2, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EASE_PREMIUM, DURATION } from "@/lib/motion";
 
 type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 
@@ -37,7 +38,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return (
     <motion.button
       ref={ref}
-      whileHover={{ y:-2 }} whileTap={{ scale:.975 }} transition={{ duration:.18, ease:[.22,1,.36,1] }}
+      whileHover={{ y:-2 }} whileTap={{ scale:.975 }} transition={{ duration: DURATION.fast, ease: EASE_PREMIUM }}
       disabled={disabled || isLoading}
       className={cn("khv-interactive khv-focus group relative isolate inline-flex min-h-[48px] items-center justify-center gap-2 overflow-hidden rounded-pill px-6 py-3 text-small font-semibold transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50", variantClasses[variant], className)}
       {...props}

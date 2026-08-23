@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useState, type ReactNode } from
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, XCircle, Info, AlertTriangle, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EASE_PREMIUM } from "@/lib/motion";
 
 type ToastVariant = "success" | "error" | "info" | "warning" | "loading";
 interface Toast {
@@ -73,7 +74,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 initial={{ opacity: 0, y: 20, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.25, ease: EASE_PREMIUM }}
                 className="glass-surface pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-md px-4 py-3 shadow-lg"
               >
                 <Icon className={cn("h-4 w-4 shrink-0", COLORS[toast.variant], toast.variant === "loading" && "animate-spin")} />

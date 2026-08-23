@@ -154,6 +154,16 @@ export function AppearanceSettingsClient() {
           <CmsField label="Dòng chính" value={settings.heroPrimaryLine} onSave={(value) => updateSettings.mutate({ heroPrimaryLine: value })} />
           <CmsField label="Dòng chuyển động" value={settings.heroVariantLine} onSave={(value) => updateSettings.mutate({ heroVariantLine: value })} />
           <CmsField label="Dòng Vault" value={settings.heroVaultLine} onSave={(value) => updateSettings.mutate({ heroVaultLine: value })} />
+          <div>
+            <CmsTextArea
+              label="Các dòng chữ chạy bổ sung (mỗi dòng 1 câu, để trống dùng 3 câu mặc định)"
+              value={settings.heroRotatingPhrasesExtra ?? ""}
+              onSave={(value) => updateSettings.mutate({ heroRotatingPhrasesExtra: value || null })}
+            />
+            <p className="mt-1.5 text-[11px] text-white/35">
+              Nên giữ mỗi câu dưới ~28 ký tự để hiển thị gọn trên 1 dòng — câu quá dài sẽ tự xuống dòng 2 nhưng vẫn không vỡ layout.
+            </p>
+          </div>
           <CmsField label="Announcement" value={settings.announcementText ?? ""} onSave={(value) => updateSettings.mutate({ announcementText: value || null })} />
           <CmsField label="CTA chính" value={settings.heroPrimaryCta} onSave={(value) => updateSettings.mutate({ heroPrimaryCta: value })} />
           <CmsField label="CTA phụ" value={settings.heroSecondaryCta} onSave={(value) => updateSettings.mutate({ heroSecondaryCta: value })} />

@@ -106,8 +106,8 @@ export function AnimatedHeadline({
   }, [reduced, key]);
 
   return (
-    <span className={cn("relative inline-flex min-h-[1.05em] items-baseline", className)}>
-      <span aria-live="polite" className={textClassName} style={textStyle}>
+    <span className={cn("relative inline-flex min-h-[2.15em] items-baseline", className)}>
+      <span aria-live="polite" className={cn("[overflow-wrap:anywhere]", textClassName)} style={textStyle}>
         {text}
       </span>
       {!reduced && (

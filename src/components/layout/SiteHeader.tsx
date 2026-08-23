@@ -58,7 +58,7 @@ export function SiteHeader() {
       <AnnouncementBanner />
       <header className="khv-header sticky top-0 z-40 border-b border-white/[.07] bg-[#05070c]/88 shadow-[0_10px_40px_rgba(0,0,0,.14)] backdrop-blur-2xl supports-[backdrop-filter]:bg-[#05070c]/62">
       {/* Row 1 — identity + controls. Every mobile target is ≥ 44px. */}
-      <div className="mx-auto flex w-full max-w-[1440px] items-center gap-2 px-3 py-2 sm:min-h-[78px] sm:px-7 lg:px-10">
+      <div className="mx-auto flex w-full max-w-[1380px] items-center gap-2 px-3 py-2 sm:min-h-[78px] sm:px-7 lg:px-10">
         <Link href="/" className="khv-focus shrink-0" aria-label="KhangHuynh Vault">
           <Logo />
         </Link>
@@ -134,7 +134,7 @@ export function SiteHeader() {
       </div>
 
       {/* Row 2 — dedicated mobile search bar. */}
-      <div className="khv-mobile-searchbar mx-auto w-full max-w-[1440px] px-3 pb-2.5 sm:px-7 lg:hidden">
+      <div className="khv-mobile-searchbar mx-auto w-full max-w-[1380px] px-3 pb-2.5 sm:px-7 lg:hidden">
         <SearchCommandPalette />
       </div>
     </header>

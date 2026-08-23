@@ -36,6 +36,7 @@ const TEXT_FIELDS = [
   "heroVariantLine",
   "heroVaultLine",
   "heroDescription",
+  "heroRotatingPhrasesExtra",
   "heroPrimaryCta",
   "heroSecondaryCta",
   "memberDisplay",

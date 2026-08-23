@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { GlassPanel } from "@/components/ui/GlassPanel";
+import { EASE_PREMIUM } from "@/lib/motion";
 
 export function Modal({
   open,
@@ -36,7 +37,7 @@ export function Modal({
             initial={{ opacity: 0, scale: 0.97, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.2, ease: EASE_PREMIUM }}
             onClick={(e) => e.stopPropagation()}
             className="my-auto flex w-full max-w-2xl max-h-[calc(100dvh-1.5rem)] py-0 sm:max-h-[min(92dvh,900px)]"
           >
