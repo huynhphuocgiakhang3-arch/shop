@@ -28,6 +28,7 @@ export type HeroSettings = {
   heroVaultLine?: string;
   heroDescription?: string | null;
   heroDescriptionColor?: string | null;
+  heroHeadlineColor?: string | null;
   heroPrimaryCta?: string;
   heroSecondaryCta?: string;
 };
@@ -85,8 +86,12 @@ export function Hero({ settings }: { settings?: HeroSettings }) {
           >
             {primary}
             <br />
-            <span className="khv-hero-headline text-gradient-orange">
-              <AnimatedHeadline phrases={phrases} />
+            <span className="khv-hero-headline">
+              <AnimatedHeadline
+                phrases={phrases}
+                textClassName={settings?.heroHeadlineColor ? undefined : "text-gradient-orange"}
+                textStyle={settings?.heroHeadlineColor ? { color: settings.heroHeadlineColor } : undefined}
+              />
             </span>
           </motion.h1>
 

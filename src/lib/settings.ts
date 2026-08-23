@@ -36,6 +36,7 @@ export type SiteSettingsPatch = Partial<
     | "heroVaultLine"
     | "heroDescription"
     | "heroDescriptionColor"
+    | "heroHeadlineColor"
     | "heroPrimaryCta"
     | "heroSecondaryCta"
     | "memberDisplay"
@@ -73,6 +74,7 @@ export function publicSiteSettings(settings: SiteSettings) {
     heroVaultLine: settings.heroVaultLine,
     heroDescription: settings.heroDescription,
     heroDescriptionColor: settings.heroDescriptionColor,
+    heroHeadlineColor: settings.heroHeadlineColor,
     heroPrimaryCta: settings.heroPrimaryCta,
     heroSecondaryCta: settings.heroSecondaryCta,
     memberDisplay: settings.memberDisplay,

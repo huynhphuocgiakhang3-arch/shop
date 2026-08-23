@@ -49,7 +49,7 @@ export interface ChatSettingsData {
 export function useChatSettings() {
   return useQuery({
     queryKey: ["admin", "chat-settings"],
-    queryFn: () => api.get<{ settings: ChatSettingsData }>("/api/admin/chat-settings")
+    queryFn: () => api.get<{ settings: ChatSettingsData; aiSupportConfigured: boolean }>("/api/admin/chat-settings")
   });
 }
 

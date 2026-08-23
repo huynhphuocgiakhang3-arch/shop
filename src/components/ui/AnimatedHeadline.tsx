@@ -24,10 +24,22 @@ const PAUSE_MS = 420;
  */
 export function AnimatedHeadline({
   phrases = DEFAULT_PHRASES,
-  className
+  className,
+  textClassName,
+  textStyle
 }: {
   phrases?: string[];
   className?: string;
+  /** Gradient/color classes MUST land here, on the element actually wrapping
+   *  the visible text — not on an ancestor. `background-clip: text` only
+   *  clips a background painted on the same box as the text; `color`
+   *  inherits to children but `background` does not, so putting the
+   *  gradient class one level too high (as the caller previously did)
+   *  renders the text with `color: transparent` and nothing to clip
+   *  against — invisible, not just low-contrast. This bit the hero's
+   *  rotating headline in production. */
+  textClassName?: string;
+  textStyle?: React.CSSProperties;
 }) {
   const cleaned = phrases.filter((line) => Boolean(line && line.trim()));
   const list = cleaned.length ? cleaned : DEFAULT_PHRASES;
@@ -95,7 +107,9 @@ export function AnimatedHeadline({
 
   return (
     <span className={cn("relative inline-flex min-h-[1.05em] items-baseline", className)}>
-      <span aria-live="polite">{text}</span>
+      <span aria-live="polite" className={textClassName} style={textStyle}>
+        {text}
+      </span>
       {!reduced && (
         <span
           aria-hidden

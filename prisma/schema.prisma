@@ -486,6 +486,9 @@ model SiteSettings {
   // without needing a redeploy. Empty/null falls back to the safe default
   // (rgba(255,255,255,.70)) baked into the frontend.
   heroDescriptionColor String?
+  // Same idea, for the rotating headline ("File/Tool hiện đại" etc.) — a
+  // plain solid color that replaces the default orange gradient when set.
+  heroHeadlineColor    String?
   heroPrimaryCta       String   @default("Khám phá Marketplace")
   heroSecondaryCta     String   @default("Mở Vault")
   memberDisplay        String?

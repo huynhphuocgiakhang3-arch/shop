@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "@/styles/globals.css";
 import { Providers } from "./providers";
 import { getFreshSessionUser } from "@/lib/auth/session";
@@ -63,6 +65,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </>
           )}
         </Providers>
+        {/* Real-user performance monitoring — Core Web Vitals (LCP/CLS/INP)
+            and traffic show up in the Vercel dashboard automatically, no
+            extra config needed. This measures what actual visitors on real
+            devices/networks experience, not a synthetic lab score. */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "@/components/ui/Toast";
 import { MusicProvider } from "@/components/music/MusicProvider";
-import { LanguageBridge } from "@/components/preferences/LanguageBridge";
+import { LocaleProvider } from "@/lib/i18n/LocaleProvider";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -19,7 +19,9 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={client}>
       <ToastProvider>
-        <MusicProvider><LanguageBridge />{children}</MusicProvider>
+        <LocaleProvider>
+          <MusicProvider>{children}</MusicProvider>
+        </LocaleProvider>
       </ToastProvider>
     </QueryClientProvider>
   );

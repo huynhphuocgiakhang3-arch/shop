@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { getChatSettings, updateChatSettings } from "@/lib/chat-settings";
+import { isAiSupportConfigured } from "@/lib/ai-support";
 import { jsonError, jsonOk, handleApiError } from "@/lib/api";
 import { isSameOrigin } from "@/lib/security/same-origin";
 
@@ -13,7 +14,10 @@ export async function GET() {
     if (response) return response;
 
     const settings = await getChatSettings();
-    return jsonOk({ settings });
+    // Read-only flag — whether ANTHROPIC_API_KEY is set is an env var, not a
+    // DB setting, so there's nothing to PATCH here; this just lets the admin
+    // UI show "AI fallback: on/off" instead of it being invisible.
+    return jsonOk({ settings, aiSupportConfigured: isAiSupportConfigured() });
   } catch (error) {
     return handleApiError(error, "admin/chat-settings:GET");
   }

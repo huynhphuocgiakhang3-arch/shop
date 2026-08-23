@@ -11,6 +11,7 @@ import { useCurrentUser } from "@/hooks/useProfile";
 import { DisplayControls } from "@/components/preferences/DisplayControls";
 import { SearchCommandPalette } from "@/components/search/SearchCommandPalette";
 import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
+import { useTranslation } from "@/lib/i18n/LocaleProvider";
 
 const NAV = [
   ["/san-pham", "Sản phẩm"],
@@ -22,6 +23,7 @@ const NAV = [
 
 export function SiteHeader() {
   const { data } = useCurrentUser();
+  const { t } = useTranslation();
   const user = data?.user;
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -73,7 +75,7 @@ export function SiteHeader() {
               data-active={pathname === href}
               className="khv-nav-indicator rounded-full px-3 py-2 text-[12px] font-medium text-white/60 transition hover:bg-white/[.05] hover:text-white"
             >
-              {label}
+              {t(label)}
             </Link>
           ))}
         </nav>
@@ -109,11 +111,11 @@ export function SiteHeader() {
                 href="/dang-nhap"
                 className="khv-focus hidden min-h-11 items-center rounded-full px-3 text-small font-medium text-white/70 hover:text-white lg:inline-flex"
               >
-                Đăng nhập
+                {t("Đăng nhập")}
               </Link>
               <Link href="/dang-ky" className="hidden lg:block">
                 <Button className="px-5 py-2.5 text-caption" withArrow>
-                  Tạo tài khoản
+                  {t("Tạo tài khoản")}
                 </Button>
               </Link>
             </>
@@ -170,7 +172,7 @@ export function SiteHeader() {
                     onClick={() => setMobileOpen(false)}
                     className="flex min-h-[52px] items-center rounded-2xl border border-white/[.08] bg-white/[.035] px-4 text-[15px] font-semibold text-white/80 active:scale-[.99]"
                   >
-                    {label}
+                    {t(label)}
                   </Link>
                 ))}
               </nav>
@@ -183,7 +185,7 @@ export function SiteHeader() {
                   onClick={() => setMobileOpen(false)}
                   className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-accent-orange text-[15px] font-bold text-black"
                 >
-                  <LayoutDashboard className="h-4 w-4" /> Mở Vault cá nhân
+                  <LayoutDashboard className="h-4 w-4" /> {t("Mở Vault cá nhân")}
                 </Link>
               ) : (
                 <div className="grid gap-2">
@@ -192,14 +194,14 @@ export function SiteHeader() {
                     onClick={() => setMobileOpen(false)}
                     className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/[.04] text-[15px] font-semibold text-white/85"
                   >
-                    <LogIn className="h-4 w-4" /> Đăng nhập
+                    <LogIn className="h-4 w-4" /> {t("Đăng nhập")}
                   </Link>
                   <Link
                     href="/dang-ky"
                     onClick={() => setMobileOpen(false)}
                     className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-accent-orange text-[15px] font-bold text-black"
                   >
-                    <UserPlus className="h-4 w-4" /> Tạo tài khoản
+                    <UserPlus className="h-4 w-4" /> {t("Tạo tài khoản")}
                   </Link>
                 </div>
               )}

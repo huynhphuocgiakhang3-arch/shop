@@ -167,6 +167,12 @@ export function AppearanceSettingsClient() {
           defaultValue="rgba(255,255,255,.78)"
           onSave={(value) => updateSettings.mutate({ heroDescriptionColor: value || null })}
         />
+        <CmsColorField
+          label="Màu chữ dòng chạy (File/Tool hiện đại...)"
+          value={settings.heroHeadlineColor ?? ""}
+          defaultValue="Gradient cam mặc định"
+          onSave={(value) => updateSettings.mutate({ heroHeadlineColor: value || null })}
+        />
       </GlassPanel>
 
       {/* Referral / Affiliate program */}

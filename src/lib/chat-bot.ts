@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getPaymentSettings, isPaymentSettingsConfigured } from "@/lib/payment-settings";
 import { EXPANDED_KEYWORDS, CORE_KEYWORD_TOKENS } from "@/lib/chat-keywords";
+import { generateAiFallbackReply, isAiSupportConfigured } from "@/lib/ai-support";
 
 export interface BotReply {
   body: string;
@@ -111,5 +112,15 @@ export async function generateBotReply(userId: string, rawMessage: string): Prom
   if (matches(text, GROUPS.support)) return { body: "Mình đã sẵn sàng hỗ trợ. Nếu câu hỏi cần Admin xử lý trực tiếp, cuộc trò chuyện sẽ được đánh dấu để Admin tiếp nhận.", handedOff: true };
 
   if (matchesBroadKeyword(text)) return { body: `Mình đã nhận diện câu hỏi của bạn trong kho ${BROAD_KEYWORD_COUNT.toLocaleString("vi-VN")}+ biến thể từ khóa. Bạn có thể hỏi về sản phẩm, giá, thanh toán, đơn hàng, tải file, VIP, tài khoản, bảo mật hoặc hỗ trợ.`, handedOff: false };
+
+  // Nothing in the keyword system matched. Previously this meant an
+  // immediate hand-off to a human. If real-AI support is configured
+  // (ANTHROPIC_API_KEY set — see src/lib/ai-support.ts), try that first;
+  // it only ever replaces this one fallback path, never the fast/free/
+  // data-grounded keyword answers above.
+  if (isAiSupportConfigured()) {
+    const aiReply = await generateAiFallbackReply(rawMessage);
+    if (aiReply) return aiReply;
+  }
   return { body: "Mình chưa tìm thấy từ khóa phù hợp. Bạn có thể hỏi về sản phẩm, giá, nạp tiền, QR, card/thẻ, số dư, đơn hàng, tải xuống, VIP, mã giảm giá, tài khoản hoặc nhắn “Admin” để được hỗ trợ trực tiếp.", handedOff: true };
 }

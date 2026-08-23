@@ -49,7 +49,7 @@ const TEXT_FIELDS = [
 // up front instead of trusting the browser's color input to always send
 // something well-formed.
 const COLOR_FIELD_PATTERN = /^(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\)|[a-zA-Z]+)$/;
-const COLOR_FIELDS = ["heroDescriptionColor"] as const;
+const COLOR_FIELDS = ["heroDescriptionColor", "heroHeadlineColor"] as const;
 
 export async function PATCH(req: NextRequest) {
   try {

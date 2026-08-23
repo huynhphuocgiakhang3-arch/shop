@@ -173,6 +173,7 @@ export default async function HomePage() {
           heroVaultLine: siteSettings.heroVaultLine,
           heroDescription: siteSettings.heroDescription,
           heroDescriptionColor: siteSettings.heroDescriptionColor,
+          heroHeadlineColor: siteSettings.heroHeadlineColor,
           heroPrimaryCta: siteSettings.heroPrimaryCta,
           heroSecondaryCta: siteSettings.heroSecondaryCta
         }} />

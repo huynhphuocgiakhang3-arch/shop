@@ -21,6 +21,8 @@
     "@hookform/resolvers": "3.9.0",
     "@prisma/client": "5.18.0",
     "@tanstack/react-query": "5.51.23",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "axios": "1.7.3",
     "bcryptjs": "2.4.3",
     "cloudinary": "2.4.0",

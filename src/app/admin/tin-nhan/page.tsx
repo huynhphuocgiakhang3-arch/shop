@@ -71,6 +71,7 @@ export default function AdminChatPage() {
 
   const conversations = listData?.conversations ?? [];
   const thread = threadData?.conversation;
+  const { data: chatSettingsData } = useChatSettings();
 
   useEffect(() => {
     const first = conversations[0];
@@ -92,9 +93,27 @@ export default function AdminChatPage() {
     <div className="flex h-[calc(100vh-140px)] flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-h2 font-display text-white">Tin nhắn</h1>
-        <Button variant="secondary" onClick={() => setSettingsOpen(true)}>
-          <Settings className="h-4 w-4" /> Tin nhắn chào mừng
-        </Button>
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-caption font-medium",
+              chatSettingsData?.aiSupportConfigured
+                ? "border-state-success/25 bg-state-success/[.06] text-state-success"
+                : "border-white/10 bg-white/[.03] text-white/40"
+            )}
+            title={
+              chatSettingsData?.aiSupportConfigured
+                ? "Bot đã trả lời được câu hỏi ngoài kho từ khóa bằng AI thật (ANTHROPIC_API_KEY đã cấu hình)."
+                : "Bot chỉ trả lời theo kho từ khóa có sẵn. Thêm biến môi trường ANTHROPIC_API_KEY để bật AI trả lời câu hỏi ngoài kho từ khóa."
+            }
+          >
+            <Bot className="h-3.5 w-3.5" />
+            AI fallback: {chatSettingsData?.aiSupportConfigured ? "Đang bật" : "Chưa cấu hình"}
+          </span>
+          <Button variant="secondary" onClick={() => setSettingsOpen(true)}>
+            <Settings className="h-4 w-4" /> Tin nhắn chào mừng
+          </Button>
+        </div>
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 md:grid-cols-[300px_1fr]">
