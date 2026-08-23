@@ -64,7 +64,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           ~64px + safe-area) and the iOS home-indicator gesture bar on plain
           marketing pages — a plain `bottom-5` collided with the bottom nav
           bar and covered its icons whenever a toast fired on those pages. */}
-      <div className="khv-toast-stack pointer-events-none fixed inset-x-0 z-[200] flex w-full flex-col items-center gap-2 px-4">
+      {/* z-[2000] — Toast must always sit above every modal/dialog in the
+          app (see the z-index hierarchy note in ConfirmDialog.tsx), because
+          actions taken *inside* a modal (e.g. "Thêm giỏ hàng" in Quick View,
+          z-[1000]) fire a toast as feedback while that modal is still open.
+          At the old z-[200], that toast rendered BEHIND the modal's opaque
+          backdrop — invisible confirmation for a real purchase-flow action.
+          Confirmed by rendering both stacked in a real browser before and
+          after this fix. */}
+      <div className="khv-toast-stack pointer-events-none fixed inset-x-0 z-[2000] flex w-full flex-col items-center gap-2 px-4">
         <AnimatePresence>
           {toasts.map((toast) => {
             const Icon = ICONS[toast.variant];

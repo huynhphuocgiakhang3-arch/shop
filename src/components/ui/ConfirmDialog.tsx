@@ -44,7 +44,19 @@ export function ConfirmDialog({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 px-4"
+          // z-index hierarchy (documented here since it's spread across
+          // several files as Tailwind arbitrary values, which can't share a
+          // JS constant the way EASE_PREMIUM does — Tailwind's compiler
+          // needs the literal `z-[N]` string in each file, not a template):
+          //   10-90    in-page sticky headers, mobile nav drawers
+          //   100      SearchCommandPalette
+          //   1000     Modal.tsx / QuickViewModal (content dialogs)
+          //   1500     ConfirmDialog — must beat content modals: a delete
+          //            confirmation opened from within an edit modal has to
+          //            render on top of it, not behind it
+          //   2000     Toast — always topmost; it's feedback for an action
+          //            that may have just been taken inside any of the above
+          className="fixed inset-0 z-[1500] flex items-center justify-center bg-black/60 px-4"
           onClick={onCancel}
         >
           <motion.div
