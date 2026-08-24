@@ -22,7 +22,7 @@ export default function AdminOverviewPage() {
       <h1 className="text-h2 font-display text-white">Tổng quan hệ thống</h1>
 
       <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
-        <StatCard icon={DollarSign} label="Doanh thu hôm nay" value={formatVnd(data.revenue.today)} />
+        <StatCard icon={DollarSign} label="Doanh thu hôm nay" value={formatVnd(data.revenue.today)} emphasis />
         <StatCard icon={DollarSign} label="Doanh thu tháng này" value={formatVnd(data.revenue.thisMonth)} hint={`Tổng: ${formatVnd(data.revenue.total)}`} />
         <StatCard icon={Users} label="Người dùng" value={String(data.users.total)} hint={`+${data.users.newLast30Days} trong 30 ngày`} />
         <StatCard icon={ShoppingBag} label="Đơn đã thanh toán" value={String(data.orders.PAID ?? 0)} />

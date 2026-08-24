@@ -11,21 +11,33 @@ export function StatCard({
   icon: Icon,
   label,
   value,
-  hint
+  hint,
+  emphasis = false
 }: {
   icon: LucideIcon;
   label: string;
   value: string;
   hint?: string;
+  /** Visually promotes the single most important metric on a dashboard
+   *  (e.g. "Doanh thu hôm nay") above its siblings — accented icon well,
+   *  bigger number. Without this every stat reads at equal weight, which
+   *  is easy to build but is exactly the flat, undifferentiated look that
+   *  separates a functional dashboard from one with real hierarchy. */
+  emphasis?: boolean;
 }) {
   return (
-    <motion.div whileHover={{ y: -3 }} transition={{ duration: 0.2 }}>
-      <GlassPanel radius="md" className="flex flex-col gap-3 p-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-orange/10 text-accent-orange">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <GlassPanel radius="md" className={cn("flex flex-col gap-3 p-5", emphasis && "border-accent-orange/25 bg-accent-orange/[.03]")}>
+        <div className={cn("flex h-9 w-9 items-center justify-center rounded-md", emphasis ? "bg-accent-orange/20 text-accent-orange" : "bg-accent-orange/10 text-accent-orange")}>
           <Icon className="h-4 w-4" />
         </div>
         <div>
-          <p className="text-h3 font-display text-white">{value}</p>
+          <p className={cn("font-display text-white", emphasis ? "text-h2" : "text-h3")}>{value}</p>
           <p className="text-caption text-white/45">{label}</p>
         </div>
         {hint && <p className="text-caption text-white/30">{hint}</p>}
@@ -85,9 +97,20 @@ export function EmptyState({
 }
 
 export function LoadingBlock() {
+  // A shimmer skeleton shaped like a typical dashboard page (stat row +
+  // content panel) reads as "this is loading real content" — a spinner
+  // just reads as "wait". Since this one component is reused across nearly
+  // every dashboard/admin page, this single change lifts the loading state
+  // everywhere at once rather than needing a per-page skeleton.
   return (
-    <div className="flex items-center justify-center py-12">
-      <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/15 border-t-accent-orange" />
+    <div className="flex flex-col gap-8" aria-busy="true" aria-label="Đang tải nội dung">
+      <div className="khv-skeleton h-8 w-48 rounded-md" />
+      <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="khv-skeleton h-[104px] rounded-md" style={{ animationDelay: `${i * 60}ms` }} />
+        ))}
+      </div>
+      <div className="khv-skeleton h-64 rounded-md" style={{ animationDelay: "160ms" }} />
     </div>
   );
 }

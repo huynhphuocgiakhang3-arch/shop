@@ -172,7 +172,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
     <div className="min-h-screen bg-bg-primary">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-10">
+      <main className="mx-auto max-w-6xl px-4 py-8 pb-28 sm:px-8 sm:py-10 lg:pb-10">
         <ProductDetailClient slug={product.slug} initialData={payload} />
       </main>
       <SiteFooter />

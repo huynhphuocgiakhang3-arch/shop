@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Star, Heart, ShoppingCart, Download, ShieldCheck, ChevronLeft, PencilLine } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Star, Heart, ShoppingCart, Download, ShieldCheck, ChevronLeft, PencilLine, Share2, Check } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "@/components/home/ProductCard";
 import { useProduct, useCreateReview, type ProductDetailResponse } from "@/hooks/useProducts";
@@ -15,6 +16,7 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { useToast } from "@/components/ui/Toast";
 import { formatVnd, formatDate } from "@/lib/format";
 import { ApiError } from "@/lib/api-client";
+import { EASE_PREMIUM } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 // Everything server-renderable (title, price, description, reviews, JSON-LD)
@@ -30,6 +32,13 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
   const { show } = useToast();
   const [activeImage, setActiveImage] = useState(0);
   const [justReviewed, setJustReviewed] = useState(false);
+  const [shared, setShared] = useState(false);
+  // Drives the mobile sticky buy bar — appears once the person has scrolled
+  // past the main CTA row, so "Mua ngay" stays reachable while reading the
+  // description/reviews further down, without permanently stealing screen
+  // space on first view (a plain always-visible bar would cover content on
+  // short phone screens before the person has even seen the price).
+  const [showStickyBar, setShowStickyBar] = useState(false);
 
   const payload = data ?? initialData;
   const { product, related, isFavorited, hasPurchased } = payload;
@@ -73,6 +82,33 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
     });
   };
 
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: product.name, url });
+      } catch {
+        /* user cancelled — no-op */
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShared(true);
+      show("Đã sao chép link sản phẩm.", "success");
+      setTimeout(() => setShared(false), 2000);
+    } catch {
+      show("Không thể sao chép link.", "error");
+    }
+  };
+
+  useEffect(() => {
+    const onScroll = () => setShowStickyBar(window.scrollY > 520);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <>
       <nav className="mb-6 flex items-center gap-1 text-caption text-white/35 sm:mb-8">
@@ -88,16 +124,31 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
       </nav>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-        <div>
-          <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[.08] bg-white/[.025] shadow-[0_24px_80px_rgba(0,0,0,.28)] sm:rounded-[28px]">
-            <Image
-              src={images[activeImage] ?? product.thumbnailUrl}
-              alt={product.name}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover"
-            />
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: EASE_PREMIUM }}
+        >
+          <div className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[.08] bg-white/[.025] shadow-[0_24px_80px_rgba(0,0,0,.28)] sm:rounded-[28px]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeImage}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25, ease: EASE_PREMIUM }}
+                className="absolute inset-0"
+              >
+                <Image
+                  src={images[activeImage] ?? product.thumbnailUrl}
+                  alt={product.name}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                />
+              </motion.div>
+            </AnimatePresence>
             {hasDiscount && (
               <span className="absolute left-3 top-3 rounded-full border border-state-success/30 bg-black/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-state-success backdrop-blur-xl sm:left-4 sm:top-4">
                 Ưu đãi
@@ -112,8 +163,8 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
                   onClick={() => setActiveImage(i)}
                   aria-label={`Ảnh ${i + 1}`}
                   className={cn(
-                    "relative h-16 w-16 shrink-0 snap-start overflow-hidden rounded-xl border transition-colors sm:h-20 sm:w-20",
-                    i === activeImage ? "border-accent-orange" : "border-white/10 hover:border-white/25"
+                    "relative h-16 w-16 shrink-0 snap-start overflow-hidden rounded-xl border transition-all duration-200 sm:h-20 sm:w-20",
+                    i === activeImage ? "border-accent-orange ring-2 ring-accent-orange/25" : "border-white/10 hover:border-white/25"
                   )}
                 >
                   <Image src={img} alt="" fill sizes="80px" className="object-cover" />
@@ -121,10 +172,14 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
               ))}
             </div>
           )}
-        </div>
+        </motion.div>
 
-        <div>
-          <h1 className="khv-hero-title text-[26px] font-semibold leading-tight tracking-[-.02em] text-white sm:text-h2">{product.name}</h1>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.08, ease: EASE_PREMIUM }}
+        >
+          <h1 className="text-[26px] font-semibold leading-tight tracking-[-.02em] text-white sm:text-h2">{product.name}</h1>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-0.5">
@@ -167,6 +222,9 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
             <Button className="khv-touch-target" variant="secondary" onClick={handleToggleFavorite} aria-label="Yêu thích">
               <Heart className={cn("h-4 w-4", isFavorited && "fill-accent-orange text-accent-orange")} />
             </Button>
+            <Button className="khv-touch-target" variant="secondary" onClick={handleShare} aria-label="Chia sẻ sản phẩm">
+              {shared ? <Check className="h-4 w-4 text-state-success" /> : <Share2 className="h-4 w-4" />}
+            </Button>
           </div>
 
           <div className="mt-6 flex items-center gap-2 text-caption text-white/35">
@@ -185,7 +243,7 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
               </div>
             )}
           </GlassPanel>
-        </div>
+        </motion.div>
       </div>
 
       <GlassPanel radius="md" className="mt-10 p-5 sm:p-6">
@@ -246,6 +304,37 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
           </div>
         </div>
       )}
+
+      {/* Sticky mobile buy bar — keeps the price + primary CTA reachable
+          while scrolling through description/reviews, the pattern every
+          serious mobile commerce site uses (product pages are long; losing
+          the buy button the moment you scroll to read more is the single
+          biggest avoidable source of drop-off). Desktop already keeps the
+          CTA in view within the two-column layout, so this is mobile-only.
+          Portalled-equivalent safety isn't needed here since it's a plain
+          fixed element with no ancestor that gains backdrop-filter/transform
+          — same reasoning already applied to the bottom nav elsewhere. */}
+      <AnimatePresence>
+        {showStickyBar && !hasPurchased && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ duration: 0.28, ease: EASE_PREMIUM }}
+            className="khv-sticky-buy-bar fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#05070c]/95 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur-2xl lg:hidden"
+          >
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-caption text-white/40">{product.name}</p>
+                <p className={cn("text-title font-bold", hasDiscount ? "text-accent-orange" : "text-white")}>{formatVnd(displayPrice)}</p>
+              </div>
+              <Button className="khv-touch-target shrink-0" onClick={handleBuyNow} isLoading={addToCart.isPending}>
+                Mua ngay
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
