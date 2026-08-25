@@ -3,12 +3,14 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { Download, Search, HardDrive, PackageCheck, ArrowDownToLine, SlidersHorizontal } from "lucide-react";
 import { useDownloadHistory } from "@/hooks/useDownloads";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { StatCard, EmptyState, LoadingBlock } from "@/components/dashboard/primitives";
 import { formatDateTime } from "@/lib/format";
+import { EASE_PREMIUM } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 type SortKey = "recent" | "oldest" | "name" | "popular";
@@ -102,8 +104,15 @@ export default function DownloadsPage() {
             <EmptyState title="Không tìm thấy sản phẩm" description={`Không có kết quả nào khớp với "${query}".`} />
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((d) => (
-                <GlassPanel key={d.id} radius="md" className="group flex flex-col gap-3 overflow-hidden p-0">
+              {filtered.map((d, index) => (
+                <motion.div
+                  key={d.id}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ y: -4 }}
+                  transition={{ duration: 0.3, delay: Math.min(index, 8) * 0.04, ease: EASE_PREMIUM }}
+                >
+                <GlassPanel radius="md" className="group flex flex-col gap-3 overflow-hidden p-0">
                   <Link href={`/san-pham/${d.product.slug}`} className="relative block aspect-[16/10] w-full overflow-hidden bg-white/5">
                     <Image
                       src={d.product.thumbnailUrl}
@@ -132,6 +141,7 @@ export default function DownloadsPage() {
                     </a>
                   </div>
                 </GlassPanel>
+                </motion.div>
               ))}
             </div>
           )}

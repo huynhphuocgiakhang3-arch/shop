@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion } from "framer-motion";
-import { Wallet, CheckCircle2, ArrowUpRight } from "lucide-react";
+import { Wallet, CheckCircle2, ArrowUpRight, ShieldCheck, Zap } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useCheckout } from "@/hooks/useCheckout";
 import { useWallet } from "@/hooks/useWallet";
@@ -13,6 +14,7 @@ import { EmptyState, LoadingBlock } from "@/components/dashboard/primitives";
 import { useToast } from "@/components/ui/Toast";
 import { formatVnd } from "@/lib/format";
 import { ApiError } from "@/lib/api-client";
+import { EASE_PREMIUM } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 const METHODS = [
@@ -60,12 +62,22 @@ export default function CheckoutPage() {
   if (success) {
     return (
       <div className="flex justify-center py-16">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: EASE_PREMIUM }}>
           <GlassPanel radius="lg" className="flex max-w-md flex-col items-center p-10 text-center">
-            <CheckCircle2 className="mb-4 h-12 w-12 text-state-success" />
+            <motion.div
+              initial={{ scale: 0.4, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.1 }}
+              className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-state-success/10"
+            >
+              <CheckCircle2 className="h-9 w-9 text-state-success" />
+            </motion.div>
             <h1 className="mb-2 text-h3 font-display text-white">Đặt hàng thành công</h1>
             <p className="mb-1 text-small text-white/60">Mã đơn hàng của bạn:</p>
             <p className="mb-6 text-title font-semibold text-accent-orange">{success.orderNumber}</p>
+            <p className="mb-6 flex items-center gap-1.5 text-caption text-white/40">
+              <Zap className="h-3.5 w-3.5 text-state-success" /> Sản phẩm đã sẵn sàng tải xuống ngay bây giờ
+            </p>
             <div className="flex gap-3">
               <Button variant="secondary" onClick={() => router.push("/don-hang")}>Xem đơn hàng</Button>
               <Button onClick={() => router.push("/tai-xuong")}>Tải xuống ngay</Button>
@@ -78,7 +90,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
-      <div className="flex flex-col gap-4">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE_PREMIUM }} className="flex flex-col gap-4">
         <h1 className="text-h2 font-display text-white">Thanh toán</h1>
 
         <GlassPanel radius="md" className="p-6">
@@ -121,43 +133,51 @@ export default function CheckoutPage() {
           <h2 className="mb-3 text-title text-white">Sản phẩm ({items.length})</h2>
           <ul className="flex flex-col divide-y divide-white/5">
             {items.map((item) => (
-              <li key={item.id} className="flex justify-between py-2 text-small text-white/70">
-                <span className="line-clamp-1">{item.product.name} × {item.quantity}</span>
-                <span>{formatVnd(Number(item.product.discountPrice ?? item.product.price) * item.quantity)}</span>
+              <li key={item.id} className="flex items-center gap-3 py-3">
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-white/5">
+                  <Image src={item.product.thumbnailUrl} alt={item.product.name} fill sizes="48px" className="object-cover" />
+                </div>
+                <span className="min-w-0 flex-1 truncate text-small text-white/70">{item.product.name} × {item.quantity}</span>
+                <span className="shrink-0 text-small text-white/85">{formatVnd(Number(item.product.discountPrice ?? item.product.price) * item.quantity)}</span>
               </li>
             ))}
           </ul>
         </GlassPanel>
-      </div>
+      </motion.div>
 
-      <GlassPanel radius="md" className="h-fit p-6">
-        <h2 className="mb-4 text-title text-white">Tổng thanh toán</h2>
-        <div className="flex flex-col gap-2 text-small">
-          <div className="flex justify-between text-white/60">
-            <span>Tạm tính</span>
-            <span>{formatVnd(summary?.subtotal ?? 0)}</span>
-          </div>
-          {summary && summary.discountTotal > 0 && (
-            <div className="flex justify-between text-accent-orange">
-              <span>Giảm giá</span>
-              <span>-{formatVnd(summary.discountTotal)}</span>
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.08, ease: EASE_PREMIUM }}>
+        <GlassPanel radius="md" className="h-fit p-6">
+          <h2 className="mb-4 text-title text-white">Tổng thanh toán</h2>
+          <div className="flex flex-col gap-2 text-small">
+            <div className="flex justify-between text-white/60">
+              <span>Tạm tính</span>
+              <span>{formatVnd(summary?.subtotal ?? 0)}</span>
             </div>
-          )}
-          <div className="flex justify-between border-t border-white/10 pt-2 text-title font-semibold text-white">
-            <span>Tổng cộng</span>
-            <span>{formatVnd(summary?.total ?? 0)}</span>
+            {summary && summary.discountTotal > 0 && (
+              <div className="flex justify-between text-accent-orange">
+                <span>Giảm giá</span>
+                <span>-{formatVnd(summary.discountTotal)}</span>
+              </div>
+            )}
+            <div className="flex justify-between border-t border-white/10 pt-2 text-title font-semibold text-white">
+              <span>Tổng cộng</span>
+              <span>{formatVnd(summary?.total ?? 0)}</span>
+            </div>
           </div>
-        </div>
 
-        <Button
-          className="mt-5 w-full"
-          onClick={handleConfirm}
-          isLoading={checkout.isPending}
-          disabled={Boolean(insufficientWallet)}
-        >
-          Xác nhận đặt hàng
-        </Button>
-      </GlassPanel>
+          <Button
+            className="mt-5 w-full"
+            onClick={handleConfirm}
+            isLoading={checkout.isPending}
+            disabled={Boolean(insufficientWallet)}
+          >
+            Xác nhận đặt hàng
+          </Button>
+          <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-white/30">
+            <ShieldCheck className="h-3.5 w-3.5" /> Thanh toán an toàn · Giao hàng số tức thì
+          </p>
+        </GlassPanel>
+      </motion.div>
     </div>
   );
 }

@@ -17,8 +17,25 @@ import { Logo } from "@/components/ui/Logo";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { registerSchema, type RegisterInput } from "@/lib/validations/user";
+import { EASE_PREMIUM } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
-const EASE = [0.22, 1, 0.36, 1] as const;
+// Simple, dependency-free strength heuristic — length + character variety.
+// Not trying to be a real entropy calculator, just enough signal to nudge
+// people away from "password1" without being preachy about it.
+function passwordStrength(pw: string): { score: 0 | 1 | 2 | 3; label: string; color: string } {
+  if (!pw) return { score: 0, label: "", color: "" };
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw) && /[^A-Za-z0-9]/.test(pw)) score++;
+  if (score <= 1) return { score: 1, label: "Yếu", color: "bg-state-danger" };
+  if (score <= 2) return { score: 2, label: "Khá", color: "bg-state-warning" };
+  return { score: 3, label: "Mạnh", color: "bg-state-success" };
+}
+
+const EASE = EASE_PREMIUM;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -32,8 +49,11 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting }
   } = useForm<RegisterInput>({ resolver: zodResolver(registerSchema) });
+  const passwordValue = watch("password", "");
+  const strength = passwordStrength(passwordValue || "");
 
   const onSubmit = async (data: RegisterInput) => {
     setServerError(null);
@@ -140,6 +160,22 @@ export default function RegisterPage() {
                     }
                     {...register("password")}
                   />
+                  {passwordValue && (
+                    <div className="-mt-2.5 flex items-center gap-2">
+                      <div className="flex flex-1 gap-1">
+                        {[1, 2, 3].map((step) => (
+                          <div
+                            key={step}
+                            className={cn(
+                              "h-1 flex-1 rounded-full transition-colors duration-200",
+                              step <= strength.score ? strength.color : "bg-white/10"
+                            )}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-[11px] text-white/40">{strength.label}</span>
+                    </div>
+                  )}
                   <Input
                     label="Xác nhận mật khẩu"
                     type={showConfirm ? "text" : "password"}
@@ -199,7 +235,13 @@ export default function RegisterPage() {
               className="flex flex-col items-center"
             >
               <LoginGlassPanel className="flex flex-col items-center text-center">
-                <CheckCircle2 className="mb-4 h-10 w-10 text-state-success" />
+                <motion.div
+                  initial={{ scale: 0.4, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.1 }}
+                >
+                  <CheckCircle2 className="mb-4 h-10 w-10 text-state-success" />
+                </motion.div>
                 <h1 className="mb-2 text-h3 font-display text-white">Đăng ký thành công!</h1>
                 <p className="mb-4 text-small text-white/55">
                   Đang đưa bạn vào Vault...

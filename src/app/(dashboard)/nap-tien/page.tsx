@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { QrCode, CreditCard, Copy, Check, Upload, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { useWallet, useWalletDeposit, useMyDeposits, useUploadDepositProof, usePaymentSettings } from "@/hooks/useWallet";
 import { GlassPanel } from "@/components/ui/GlassPanel";
@@ -11,12 +12,15 @@ import { LoadingBlock, EmptyState } from "@/components/dashboard/primitives";
 import { useToast } from "@/components/ui/Toast";
 import { formatVnd, formatDateTime } from "@/lib/format";
 import { ApiError } from "@/lib/api-client";
+import { EASE_PREMIUM } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
+const QUICK_AMOUNTS = [100_000, 200_000, 500_000, 1_000_000, 2_000_000, 5_000_000];
+
 const DEPOSIT_STATUS_META = {
-  PENDING: { label: "Đang chờ duyệt", icon: Clock, className: "text-state-warning" },
-  APPROVED: { label: "Đã cộng tiền", icon: CheckCircle2, className: "text-state-success" },
-  REJECTED: { label: "Bị từ chối", icon: XCircle, className: "text-state-danger" }
+  PENDING: { label: "Đang chờ duyệt", icon: Clock, pillClassName: "bg-state-warning/10 text-state-warning" },
+  APPROVED: { label: "Đã cộng tiền", icon: CheckCircle2, pillClassName: "bg-state-success/10 text-state-success" },
+  REJECTED: { label: "Bị từ chối", icon: XCircle, pillClassName: "bg-state-danger/10 text-state-danger" }
 } as const;
 
 function CopyField({ label, value }: { label: string; value: string }) {
@@ -115,7 +119,7 @@ export default function DepositPage() {
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px]">
-      <div className="flex flex-col gap-6">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE_PREMIUM }} className="flex flex-col gap-6">
         <div>
           <h1 className="text-h2 font-display text-white">Nạp tiền</h1>
           <p className="mt-1 text-small text-white/50">Số dư hiện tại: {formatVnd(walletData?.wallet.balance ?? 0)}</p>
@@ -167,6 +171,23 @@ export default function DepositPage() {
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="500000"
               />
+              <div className="mt-3 flex flex-wrap gap-2">
+                {QUICK_AMOUNTS.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setAmount(String(preset))}
+                    className={cn(
+                      "khv-touch-target rounded-full border px-3.5 py-1.5 text-caption font-semibold transition-colors",
+                      Number(amount) === preset
+                        ? "border-accent-orange/60 bg-accent-orange/10 text-accent-orange"
+                        : "border-white/10 bg-white/[.03] text-white/55 hover:border-white/20 hover:text-white/80"
+                    )}
+                  >
+                    {preset >= 1_000_000 ? `${preset / 1_000_000}tr` : `${preset / 1000}k`}
+                  </button>
+                ))}
+              </div>
 
               {method === "QR_BANK" ? (
                 settingsLoading ? (
@@ -263,9 +284,10 @@ export default function DepositPage() {
             </GlassPanel>
           </>
         )}
-      </div>
+      </motion.div>
 
-      <GlassPanel radius="md" className="h-fit p-6">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.08, ease: EASE_PREMIUM }}>
+        <GlassPanel radius="md" className="h-fit p-6">
         <h2 className="mb-4 text-title text-white">Lịch sử nạp tiền</h2>
         {deposits.length === 0 ? (
           <EmptyState title="Chưa có yêu cầu nào" description="Các yêu cầu nạp tiền của bạn sẽ hiện tại đây." />
@@ -282,16 +304,17 @@ export default function DepositPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-small font-medium text-white/90">{formatVnd(d.amount)}</p>
-                    <p className={cn("flex items-center justify-end gap-1 text-caption", meta.className)}>
+                    <span className={cn("mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold", meta.pillClassName)}>
                       <Icon className="h-3 w-3" /> {meta.label}
-                    </p>
+                    </span>
                   </div>
                 </li>
               );
             })}
           </ul>
         )}
-      </GlassPanel>
+        </GlassPanel>
+      </motion.div>
     </div>
   );
 }
