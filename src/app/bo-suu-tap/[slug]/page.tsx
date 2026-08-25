@@ -5,12 +5,18 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ProductCard } from "@/components/home/ProductCard";
 import { enrichStorefrontProduct } from "@/lib/commerce/enrich-products";
+import { isSchemaDriftError } from "@/lib/db/ensure-schema";
 
 export const dynamic = "force-dynamic";
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://khanghuynhvault.vercel.app").replace(/\/$/, "");
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const collection = await prisma.collection.findUnique({ where: { slug: params.slug }, select: { name: true, description: true } });
+  let collection: { name: string; description: string | null } | null = null;
+  try {
+    collection = await prisma.collection.findUnique({ where: { slug: params.slug }, select: { name: true, description: true } });
+  } catch (error) {
+    if (!isSchemaDriftError(error)) throw error;
+  }
   if (!collection) return { title: "Bộ sưu tập" };
   return {
     title: collection.name,
@@ -19,9 +25,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function CollectionDetailPage({ params }: { params: { slug: string } }) {
-  const collection = await prisma.collection.findUnique({
-    where: { slug: params.slug },
+async function loadCollection(slug: string) {
+  return prisma.collection.findUnique({
+    where: { slug },
     include: {
       products: {
         orderBy: { sortOrder: "asc" },
@@ -33,6 +39,15 @@ export default async function CollectionDetailPage({ params }: { params: { slug:
       }
     }
   });
+}
+
+export default async function CollectionDetailPage({ params }: { params: { slug: string } }) {
+  let collection: Awaited<ReturnType<typeof loadCollection>> = null;
+  try {
+    collection = await loadCollection(params.slug);
+  } catch (error) {
+    if (!isSchemaDriftError(error)) throw error;
+  }
   if (!collection) notFound();
 
   type CollectionProductRow = (typeof collection.products)[number];

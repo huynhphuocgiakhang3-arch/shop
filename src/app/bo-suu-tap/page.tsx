@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { EmptyState } from "@/components/dashboard/primitives";
+import { isSchemaDriftError } from "@/lib/db/ensure-schema";
 
 export const dynamic = "force-dynamic";
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://khanghuynhvault.vercel.app").replace(/\/$/, "");
@@ -15,10 +16,22 @@ export const metadata: Metadata = {
 };
 
 export default async function CollectionsPage() {
-  const collections = await prisma.collection.findMany({
-    orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }],
-    include: { _count: { select: { products: true } } }
-  });
+  let collections: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    isFeatured: boolean;
+    _count: { products: number };
+  }> = [];
+  try {
+    collections = await prisma.collection.findMany({
+      orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }],
+      include: { _count: { select: { products: true } } }
+    });
+  } catch (error) {
+    if (!isSchemaDriftError(error)) throw error;
+  }
 
   return (
     <div className="min-h-screen bg-bg-primary">

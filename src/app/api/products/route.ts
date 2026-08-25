@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { jsonOk, parsePagination, paginatedResponse, handleApiError } from "@/lib/api";
 import { enrichStorefrontProduct } from "@/lib/commerce/enrich-products";
+import { isSchemaDriftError } from "@/lib/db/ensure-schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -74,47 +75,81 @@ export async function GET(req: NextRequest) {
       where.id = { in: rated.map((row: { productId: string }) => row.productId) };
     }
 
-    const [items, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        orderBy: SORT_OPTIONS[sortKey],
-        skip,
-        take,
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          shortDescription: true,
-          thumbnailUrl: true,
-          price: true,
-          discountPrice: true,
-          featureBullets: true,
-          isVipOnly: true,
-          isFeatured: true,
-          isBestseller: true,
-          isEditorsPick: true,
-          isLimited: true,
-          isPopular: true,
-          licenseType: true,
-          version: true,
-          compatibility: true,
-          fileSizeMb: true,
-          salesCount: true,
-          downloadCount: true,
-          tags: true,
-          createdAt: true,
-          displayRatingMode: true,
-          displayRating: true,
-          displayReviewCountMode: true,
-          displayReviewCount: true,
-          displayBuyerCountMode: true,
-          displayBuyerCount: true,
-          category: { select: { name: true, slug: true } },
-          _count: { select: { reviews: true } }
-        }
-      }),
-      prisma.product.count({ where })
-    ]);
+    const productSelect = {
+      id: true,
+      name: true,
+      slug: true,
+      shortDescription: true,
+      thumbnailUrl: true,
+      price: true,
+      discountPrice: true,
+      featureBullets: true,
+      isVipOnly: true,
+      isFeatured: true,
+      isBestseller: true,
+      isEditorsPick: true,
+      isLimited: true,
+      isPopular: true,
+      licenseType: true,
+      version: true,
+      compatibility: true,
+      fileSizeMb: true,
+      salesCount: true,
+      downloadCount: true,
+      tags: true,
+      createdAt: true,
+      displayRatingMode: true,
+      displayRating: true,
+      displayReviewCountMode: true,
+      displayReviewCount: true,
+      displayBuyerCountMode: true,
+      displayBuyerCount: true,
+      category: { select: { name: true, slug: true } },
+      _count: { select: { reviews: true } }
+    } as const;
+
+    const legacySelect = {
+      id: true,
+      name: true,
+      slug: true,
+      shortDescription: true,
+      thumbnailUrl: true,
+      price: true,
+      discountPrice: true,
+      featureBullets: true,
+      isVipOnly: true,
+      isFeatured: true,
+      version: true,
+      compatibility: true,
+      fileSizeMb: true,
+      salesCount: true,
+      downloadCount: true,
+      tags: true,
+      createdAt: true,
+      category: { select: { name: true, slug: true } },
+      _count: { select: { reviews: true } }
+    } as const;
+
+    const legacyWhere: Prisma.ProductWhereInput = {
+      ...where,
+      collections: undefined,
+      isBestseller: undefined
+    };
+
+    let items;
+    let total: number;
+    try {
+      [items, total] = await Promise.all([
+        prisma.product.findMany({ where, orderBy: SORT_OPTIONS[sortKey], skip, take, select: productSelect }),
+        prisma.product.count({ where })
+      ]);
+    } catch (error) {
+      if (!isSchemaDriftError(error)) throw error;
+      [items, total] = await Promise.all([
+        prisma.product.findMany({ where: legacyWhere, orderBy: SORT_OPTIONS[sortKey], skip, take, select: legacySelect }),
+        prisma.product.count({ where: legacyWhere })
+      ]);
+    }
 
     type ProductListItem = (typeof items)[number];
     type RatingRow = { productId: string; _avg: { rating: number | null }; _count: { _all: number } };

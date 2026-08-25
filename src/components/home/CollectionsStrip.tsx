@@ -1,12 +1,19 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { isSchemaDriftError } from "@/lib/db/ensure-schema";
 
 export async function CollectionsStrip() {
-  const collections = await prisma.collection.findMany({
-    orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }],
-    take: 4,
-    include: { _count: { select: { products: true } } }
-  });
+  let collections: Array<{ id: string; name: string; slug: string; _count: { products: number } }> = [];
+  try {
+    collections = await prisma.collection.findMany({
+      orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }],
+      take: 4,
+      include: { _count: { select: { products: true } } }
+    });
+  } catch (error) {
+    if (!isSchemaDriftError(error)) throw error;
+    return null;
+  }
   if (collections.length === 0) return null;
 
   return (

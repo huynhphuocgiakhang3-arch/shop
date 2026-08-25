@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { ensureCommerceSchema, isSchemaEnsureInProgress } from "@/lib/db/ensure-schema";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -6,9 +7,21 @@ declare global {
 }
 
 function createPrismaClient(): PrismaClient {
-  return new PrismaClient({
+  const client = new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"]
   });
+
+  // Apply pending Vault commerce DDL before the first real query on this
+  // isolate. Queries issued *from* the ensure routine set
+  // `isSchemaEnsureInProgress()` so they do not recurse back into itself.
+  client.$use(async (params: unknown, next: (params: unknown) => Promise<unknown>) => {
+    if (!isSchemaEnsureInProgress()) {
+      await ensureCommerceSchema(client);
+    }
+    return next(params);
+  });
+
+  return client;
 }
 
 /**

@@ -13,6 +13,7 @@ import { WhyVaultSection } from "@/components/home/WhyVaultSection";
 import { RecentlyViewedSection } from "@/components/home/RecentlyViewedSection";
 import { CollectionsStrip } from "@/components/home/CollectionsStrip";
 import { getSiteSettings } from "@/lib/settings";
+import { isSchemaDriftError } from "@/lib/db/ensure-schema";
 import type { ProductCardData } from "@/components/home/ProductCard";
 
 export const dynamic = "force-dynamic"; // homepage reflects live catalog/stats, never statically cached
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
   }
 };
 
-const PRODUCT_CARD_SELECT = {
+const PRODUCT_CARD_SELECT_CORE = {
   id: true,
   name: true,
   slug: true,
@@ -45,11 +46,15 @@ const PRODUCT_CARD_SELECT = {
   salesCount: true,
   isFeatured: true,
   isVipOnly: true,
-  isBestseller: true,
-  isEditorsPick: true,
   createdAt: true,
   featureBullets: true,
   category: { select: { name: true } }
+} as const;
+
+const PRODUCT_CARD_SELECT = {
+  ...PRODUCT_CARD_SELECT_CORE,
+  isBestseller: true,
+  isEditorsPick: true
 } as const;
 
 // Prisma `Decimal` fields are class instances, not plain serializable
@@ -58,11 +63,28 @@ const PRODUCT_CARD_SELECT = {
 // the Prisma result (with Decimal price fields) into a plain ProductCardData
 // object (with number price fields) that is safe to pass across the
 // server/client boundary.
-async function getProductCards() {
-  return prisma.product.findMany({ select: PRODUCT_CARD_SELECT });
+async function loadHomeProducts(select: typeof PRODUCT_CARD_SELECT | typeof PRODUCT_CARD_SELECT_CORE) {
+  return Promise.all([
+    prisma.product.findMany({
+      where: { status: "PUBLISHED", isFeatured: true },
+      take: 8,
+      orderBy: { createdAt: "desc" },
+      select
+    }),
+    prisma.product.findMany({
+      where: { status: "PUBLISHED" },
+      take: 8,
+      orderBy: { createdAt: "desc" },
+      select
+    }),
+    prisma.product.findMany({
+      where: { status: "PUBLISHED" },
+      take: 8,
+      orderBy: { salesCount: "desc" },
+      select
+    })
+  ]);
 }
-
-type PrismaProduct = Awaited<ReturnType<typeof getProductCards>>[number];
 
 type RatingSummary = { averageRating: number; reviewCount: number };
 
@@ -70,8 +92,8 @@ type ProductCardRow = {
   id: string;
   name: string;
   slug: string;
-  shortDescription: string | null;
-  thumbnailUrl: string | null;
+  shortDescription: string;
+  thumbnailUrl: string;
   price: unknown;
   discountPrice: unknown | null;
   salesCount: number;
@@ -79,7 +101,7 @@ type ProductCardRow = {
   isVipOnly: boolean;
   isBestseller?: boolean;
   isEditorsPick?: boolean;
-  createdAt?: Date;
+  createdAt: Date;
   featureBullets: string[];
   category: { name: string } | null;
 };
@@ -91,7 +113,7 @@ function compactSocialCount(value: number) {
   return hundreds ? `${thousands}k${hundreds}+` : `${thousands}k+`;
 }
 
-function serializeProduct(p: PrismaProduct, rating?: RatingSummary): ProductCardData {
+function serializeProduct(p: ProductCardRow, rating?: RatingSummary): ProductCardData {
   return {
     id: p.id,
     name: p.name,
@@ -114,25 +136,18 @@ function serializeProduct(p: PrismaProduct, rating?: RatingSummary): ProductCard
 }
 
 export default async function HomePage() {
-  const [featured, latest, popular, categories, reviews, productCount, userCount, orderCount, fiveStarCount, siteSettings, faqs] = await Promise.all([
-    prisma.product.findMany({
-      where: { status: "PUBLISHED", isFeatured: true },
-      take: 8,
-      orderBy: { createdAt: "desc" },
-      select: PRODUCT_CARD_SELECT
-    }),
-    prisma.product.findMany({
-      where: { status: "PUBLISHED" },
-      take: 8,
-      orderBy: { createdAt: "desc" },
-      select: PRODUCT_CARD_SELECT
-    }),
-    prisma.product.findMany({
-      where: { status: "PUBLISHED" },
-      take: 8,
-      orderBy: { salesCount: "desc" },
-      select: PRODUCT_CARD_SELECT
-    }),
+  let featured: ProductCardRow[];
+  let latest: ProductCardRow[];
+  let popular: ProductCardRow[];
+  try {
+    [featured, latest, popular] = await loadHomeProducts(PRODUCT_CARD_SELECT);
+  } catch (error) {
+    if (!isSchemaDriftError(error)) throw error;
+    console.error("[home] New product columns are missing; rendering catalog without badges.");
+    [featured, latest, popular] = await loadHomeProducts(PRODUCT_CARD_SELECT_CORE);
+  }
+
+  const [categories, reviews, productCount, userCount, orderCount, fiveStarCount, siteSettings, faqs] = await Promise.all([
     prisma.category.findMany({
       where: { parentId: null },
       orderBy: { order: "asc" },

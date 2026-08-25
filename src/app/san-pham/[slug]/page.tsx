@@ -8,28 +8,70 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
 import { ProductDetailClient } from "./ProductDetailClient";
 import type { ProductDetailResponse } from "@/hooks/useProducts";
+import { isSchemaDriftError } from "@/lib/db/ensure-schema";
 
 export const dynamic = "force-dynamic";
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://khanghuynhvault.vercel.app").replace(/\/$/, "");
 
-async function getProductPayload(slug: string): Promise<ProductDetailResponse | null> {
-  const product = await prisma.product.findUnique({
-    where: { slug },
+const PRODUCT_DETAIL_RELATIONS = {
+  category: { select: { id: true, name: true, slug: true } },
+  reviews: {
+    where: { isHidden: false },
+    orderBy: { createdAt: "desc" as const },
+    take: 20,
     include: {
-      category: { select: { id: true, name: true, slug: true } },
-      reviews: {
-        where: { isHidden: false },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-        include: {
-          user: { select: { displayName: true, avatarUrl: true } },
-          _count: { select: { likes: true } }
-        }
-      },
-      _count: { select: { reviews: true, favorites: true } }
+      user: { select: { displayName: true, avatarUrl: true } },
+      _count: { select: { likes: true } }
     }
-  });
+  },
+  _count: { select: { reviews: true, favorites: true } }
+} as const;
+
+async function findStorefrontProduct(slug: string) {
+  try {
+    return await prisma.product.findUnique({
+      where: { slug },
+      include: PRODUCT_DETAIL_RELATIONS
+    });
+  } catch (error) {
+    if (!isSchemaDriftError(error)) throw error;
+    return prisma.product.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        shortDescription: true,
+        description: true,
+        thumbnailUrl: true,
+        galleryUrls: true,
+        featureBullets: true,
+        previewVideoUrl: true,
+        releaseNotes: true,
+        tags: true,
+        version: true,
+        fileSizeMb: true,
+        compatibility: true,
+        price: true,
+        discountPrice: true,
+        stock: true,
+        isVipOnly: true,
+        isFeatured: true,
+        status: true,
+        downloadCount: true,
+        salesCount: true,
+        categoryId: true,
+        createdAt: true,
+        updatedAt: true,
+        ...PRODUCT_DETAIL_RELATIONS
+      }
+    });
+  }
+}
+
+async function getProductPayload(slug: string): Promise<ProductDetailResponse | null> {
+  const product = await findStorefrontProduct(slug);
 
   if (!product || product.status !== "PUBLISHED") return null;
 

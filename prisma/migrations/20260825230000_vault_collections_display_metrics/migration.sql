@@ -1,5 +1,9 @@
--- CreateEnum
-CREATE TYPE "DisplayMetricMode" AS ENUM ('AUTOMATIC', 'MANAGED');
+-- CreateEnum (idempotent — production may already have received a partial apply)
+DO $$ BEGIN
+  CREATE TYPE "DisplayMetricMode" AS ENUM ('AUTOMATIC', 'MANAGED');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AlterTable
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "isBestseller" BOOLEAN NOT NULL DEFAULT false;

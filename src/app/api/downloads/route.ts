@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/guard";
 import { generateSecureToken } from "@/lib/tokens";
 import { jsonError, jsonOk, parsePagination, paginatedResponse, handleApiError } from "@/lib/api";
+import { isSchemaDriftError } from "@/lib/db/ensure-schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,38 +15,68 @@ export async function GET(req: NextRequest) {
 
     const { page, pageSize, skip, take } = parsePagination(req.nextUrl.searchParams);
 
-    const [items, total] = await Promise.all([
-      prisma.downloadToken.findMany({
-        where: { userId: user.sub },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take,
-        include: {
-          product: {
-            select: {
-              id: true,
-              name: true,
-              thumbnailUrl: true,
-              slug: true,
-              version: true,
-              fileSizeMb: true,
-              compatibility: true,
-              licenseType: true,
-              licenseTerms: true,
-              releaseNotes: true,
-              updatedAt: true
-            }
-          }
-        }
-      }),
-      prisma.downloadToken.count({ where: { userId: user.sub } })
-    ]);
+    const productSelect = {
+      id: true,
+      name: true,
+      thumbnailUrl: true,
+      slug: true,
+      version: true,
+      fileSizeMb: true,
+      compatibility: true,
+      licenseType: true,
+      licenseTerms: true,
+      releaseNotes: true,
+      updatedAt: true
+    } as const;
+    const legacyProductSelect = {
+      id: true,
+      name: true,
+      thumbnailUrl: true,
+      slug: true,
+      version: true,
+      fileSizeMb: true,
+      compatibility: true,
+      releaseNotes: true,
+      updatedAt: true
+    } as const;
+
+    let items;
+    let total: number;
+    try {
+      [items, total] = await Promise.all([
+        prisma.downloadToken.findMany({
+          where: { userId: user.sub },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take,
+          include: { product: { select: productSelect } }
+        }),
+        prisma.downloadToken.count({ where: { userId: user.sub } })
+      ]);
+    } catch (error) {
+      if (!isSchemaDriftError(error)) throw error;
+      [items, total] = await Promise.all([
+        prisma.downloadToken.findMany({
+          where: { userId: user.sub },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take,
+          include: { product: { select: legacyProductSelect } }
+        }),
+        prisma.downloadToken.count({ where: { userId: user.sub } })
+      ]);
+    }
 
     type DownloadRow = (typeof items)[number];
     type VaultMetaRow = { productId: string; pinned: boolean; notes: string | null; tags: string[] };
-    const metas = await prisma.vaultItem.findMany({
-      where: { userId: user.sub, productId: { in: items.map((item: DownloadRow) => item.productId) } }
-    });
+    let metas: VaultMetaRow[] = [];
+    try {
+      metas = await prisma.vaultItem.findMany({
+        where: { userId: user.sub, productId: { in: items.map((item: DownloadRow) => item.productId) } }
+      });
+    } catch (error) {
+      if (!isSchemaDriftError(error)) throw error;
+    }
     const metaMap = new Map(metas.map((item: VaultMetaRow) => [item.productId, item]));
     const enriched = items.map((item: DownloadRow) => ({
       ...item,
