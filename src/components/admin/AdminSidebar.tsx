@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, LayoutDashboard, Package, ShoppingBag, Users, LogOut, ShieldCheck, Palette, Wallet, QrCode, Music2, MessageCircle, Tags, TicketPercent, Star, CircleHelp, Megaphone, LifeBuoy, Download, ShieldAlert, Gift } from "lucide-react";
+import { Menu, X, LayoutDashboard, Package, ShoppingBag, Users, LogOut, ShieldCheck, Palette, Wallet, QrCode, Music2, MessageCircle, Tags, TicketPercent, Star, CircleHelp, Megaphone, LifeBuoy, Download, ShieldAlert, Gift, Layers, Gauge } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
 import { DisplayControls } from "@/components/preferences/DisplayControls";
@@ -14,6 +14,7 @@ const NAV = [
   { href: "/admin", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/admin/san-pham", label: "Sản phẩm", icon: Package },
   { href: "/admin/danh-muc", label: "Danh mục", icon: Tags },
+  { href: "/admin/bo-suu-tap", label: "Bộ sưu tập", icon: Layers },
   { href: "/admin/don-hang", label: "Đơn hàng", icon: ShoppingBag },
   { href: "/admin/tai-xuong", label: "Lịch sử tải xuống", icon: Download },
   { href: "/admin/nguoi-dung", label: "Người dùng", icon: Users },
@@ -34,7 +35,8 @@ const SUPER_ADMIN_NAV = [
   { href: "/admin/nhac", label: "Nhạc nền", icon: Music2 },
   { href: "/admin/thong-bao-he-thong", label: "Thông báo hệ thống", icon: Megaphone },
   { href: "/admin/nhat-ky-he-thong", label: "Nhật ký hệ thống", icon: ShieldAlert },
-  { href: "/admin/giao-dien", label: "Giao diện & Hệ thống", icon: Palette }
+  { href: "/admin/giao-dien", label: "Giao diện & Hệ thống", icon: Palette },
+  { href: "/admin/dieu-khien", label: "System Control", icon: Gauge }
 ];
 
 export function AdminSidebar() {

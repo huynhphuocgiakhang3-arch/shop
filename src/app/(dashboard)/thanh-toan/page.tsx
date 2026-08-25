@@ -72,8 +72,9 @@ export default function CheckoutPage() {
             >
               <CheckCircle2 className="h-9 w-9 text-state-success" />
             </motion.div>
-            <h1 className="mb-2 text-h3 font-display text-white">Đặt hàng thành công</h1>
-            <p className="mb-1 text-small text-white/60">Mã đơn hàng của bạn:</p>
+            <h1 className="mb-2 text-h3 font-display text-white">Purchase complete</h1>
+            <p className="mb-2 text-small text-white/70">Vault của bạn vừa lớn hơn.</p>
+            <p className="mb-1 text-small text-white/60">Mã đơn hàng:</p>
             <p className="mb-6 text-title font-semibold text-accent-orange">{success.orderNumber}</p>
             <p className="mb-6 flex items-center gap-1.5 text-caption text-white/40">
               <Zap className="h-3.5 w-3.5 text-state-success" /> Sản phẩm đã sẵn sàng tải xuống ngay bây giờ

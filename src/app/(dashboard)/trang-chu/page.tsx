@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Wallet, Package, Heart, Bell, Download, ArrowRight } from "lucide-react";
+import { recentlyViewedSlugs } from "@/lib/commerce/recently-viewed";
+import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/hooks/useProfile";
 import { useWallet } from "@/hooks/useWallet";
 import { useOrders } from "@/hooks/useOrders";
@@ -12,12 +14,10 @@ import { StatCard, SectionCard, EmptyState, LoadingBlock } from "@/components/da
 import { formatVnd, formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, MEMBERSHIP_LABEL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-function greeting() {
+function greeting(name?: string) {
   const h = new Date().getHours();
-  if (h < 11) return "Chào buổi sáng";
-  if (h < 14) return "Chào buổi trưa";
-  if (h < 18) return "Chào buổi chiều";
-  return "Chào buổi tối";
+  const part = h < 11 ? "Chào buổi sáng" : h < 14 ? "Chào buổi trưa" : h < 18 ? "Chào buổi chiều" : "Chào buổi tối";
+  return name ? `${part}, ${name}` : "Chào mừng bạn quay lại";
 }
 
 export default function DashboardHomePage() {
@@ -27,6 +27,10 @@ export default function DashboardHomePage() {
   const { data: notifData } = useNotifications();
   const { data: favoritesData } = useFavorites();
   const { data: downloadsData } = useDownloadHistory();
+  const [continueSlug, setContinueSlug] = useState<string | null>(null);
+  useEffect(() => {
+    setContinueSlug(recentlyViewedSlugs(1)[0] ?? null);
+  }, []);
 
   if (userLoading) return <LoadingBlock />;
 
@@ -39,9 +43,16 @@ export default function DashboardHomePage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-h1 font-display text-white">
-          {greeting()}, {user?.displayName} 👋
+          {greeting(user?.displayName)} 👋
         </h1>
         <p className="mt-1 text-small text-white/45">Đây là tổng quan hoạt động gần đây của bạn trong Vault.</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {continueSlug ? <Link href={`/san-pham/${continueSlug}`} className="rounded-full border border-white/10 px-4 py-2 text-small text-white/70">Tiếp tục xem sản phẩm</Link> : null}
+        <Link href="/tai-xuong" className="rounded-full border border-white/10 px-4 py-2 text-small text-white/70">Tải gần đây</Link>
+        <Link href="/san-pham" className="rounded-full border border-white/10 px-4 py-2 text-small text-white/70">Khám phá sản phẩm</Link>
+        <Link href="/ho-tro" className="rounded-full border border-white/10 px-4 py-2 text-small text-white/70">Liên hệ hỗ trợ</Link>
       </div>
 
       <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">

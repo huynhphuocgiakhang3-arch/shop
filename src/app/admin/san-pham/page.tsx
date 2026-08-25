@@ -26,6 +26,7 @@ import { formatVnd } from "@/lib/format";
 import { ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { uploadDirectToCloudinary } from "@/lib/client/cloudinary-upload";
+import { computeProductQuality } from "@/lib/commerce/product-quality";
 
 const STATUS_TABS = [
   { value: undefined, label: "Tất cả" },
@@ -54,7 +55,21 @@ const emptyForm: ProductFormInput = {
   releaseNotes: "",
   version: "1.0.0",
   fileSizeMb: undefined,
-  compatibility: ""
+  compatibility: "",
+  licenseType: "",
+  licenseTerms: "",
+  tags: [],
+  isBestseller: false,
+  isEditorsPick: false,
+  isLimited: false,
+  isPopular: false,
+  displayRatingMode: "AUTOMATIC",
+  displayRating: null,
+  displayReviewCountMode: "AUTOMATIC",
+  displayReviewCount: null,
+  displayBuyerCountMode: "AUTOMATIC",
+  displayBuyerCount: null,
+  previewVideoUrl: ""
 };
 
 const normalizeSlug = (value: string) =>
@@ -97,6 +112,16 @@ export default function AdminProductsPage() {
       // Storage can be unavailable in private/restricted browser contexts.
     }
   }, [form, modalOpen, editing]);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    const onLeave = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onLeave);
+    return () => window.removeEventListener("beforeunload", onLeave);
+  }, [modalOpen]);
 
   const clearProductDraft = () => {
     try {
@@ -148,7 +173,21 @@ export default function AdminProductsPage() {
       releaseNotes: product.releaseNotes ?? "",
       version: product.version ?? "1.0.0",
       fileSizeMb: product.fileSizeMb ?? undefined,
-      compatibility: product.compatibility ?? ""
+      compatibility: product.compatibility ?? "",
+      licenseType: product.licenseType ?? "",
+      licenseTerms: product.licenseTerms ?? "",
+      tags: product.tags ?? [],
+      isBestseller: product.isBestseller ?? false,
+      isEditorsPick: product.isEditorsPick ?? false,
+      isLimited: product.isLimited ?? false,
+      isPopular: product.isPopular ?? false,
+      displayRatingMode: product.displayRatingMode ?? "AUTOMATIC",
+      displayRating: product.displayRating ?? null,
+      displayReviewCountMode: product.displayReviewCountMode ?? "AUTOMATIC",
+      displayReviewCount: product.displayReviewCount ?? null,
+      displayBuyerCountMode: product.displayBuyerCountMode ?? "AUTOMATIC",
+      displayBuyerCount: product.displayBuyerCount ?? null,
+      previewVideoUrl: product.previewVideoUrl ?? ""
     });
     setModalOpen(true);
   };
@@ -488,7 +527,69 @@ export default function AdminProductsPage() {
             </label>
           </div>
 
-          <Input label="Số lượt mua hiển thị" type="number" min={0} value={form.salesCount ?? 0} onChange={(e) => setForm((current) => ({ ...current, salesCount: Math.max(0, Number(e.target.value) || 0) }))} />
+          <Input label="Số lượt mua thật (salesCount)" type="number" min={0} value={form.salesCount ?? 0} onChange={(e) => setForm((current) => ({ ...current, salesCount: Math.max(0, Number(e.target.value) || 0) }))} />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Loại giấy phép" value={form.licenseType ?? ""} onChange={(e) => setForm({ ...form, licenseType: e.target.value })} placeholder="Personal / Commercial" />
+            <Input label="Tags catalog (phẩy)" value={(form.tags ?? []).join(", ")} onChange={(e) => setForm({ ...form, tags: e.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} />
+          </div>
+          <div>
+            <label className="mb-2 block text-small text-white/70">Điều khoản giấy phép</label>
+            <textarea value={form.licenseTerms ?? ""} onChange={(e) => setForm({ ...form, licenseTerms: e.target.value })} rows={3} className="w-full rounded-md border border-white/10 bg-white/[.03] px-4 py-3 text-small text-white focus:border-accent-orange/70 focus:outline-none" />
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-small text-white/60"><input type="checkbox" checked={form.isBestseller} onChange={(e) => setForm({ ...form, isBestseller: e.target.checked })} /> Bestseller</label>
+            <label className="flex items-center gap-2 text-small text-white/60"><input type="checkbox" checked={form.isEditorsPick} onChange={(e) => setForm({ ...form, isEditorsPick: e.target.checked })} /> Editors Pick</label>
+            <label className="flex items-center gap-2 text-small text-white/60"><input type="checkbox" checked={form.isLimited} onChange={(e) => setForm({ ...form, isLimited: e.target.checked })} /> Limited</label>
+            <label className="flex items-center gap-2 text-small text-white/60"><input type="checkbox" checked={form.isPopular} onChange={(e) => setForm({ ...form, isPopular: e.target.checked })} /> Popular</label>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 p-4">
+            <p className="mb-3 text-small font-semibold text-white/80">Display metrics (marketing)</p>
+            <p className="mb-3 text-caption text-white/40">Mặc định Automatic — storefront dùng dữ liệu thật. Managed không sửa số giao dịch.</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="text-caption text-white/50">Rating mode
+                <select value={form.displayRatingMode} onChange={(e) => setForm({ ...form, displayRatingMode: e.target.value as "AUTOMATIC" | "MANAGED" })} className="mt-1 w-full rounded-md border border-white/10 bg-bg-secondary px-3 py-2 text-white">
+                  <option value="AUTOMATIC">Automatic</option>
+                  <option value="MANAGED">Managed</option>
+                </select>
+              </label>
+              <Input label="Rating hiển thị" type="number" min={0} max={5} step="0.1" value={form.displayRating ?? ""} onChange={(e) => setForm({ ...form, displayRating: e.target.value === "" ? null : Number(e.target.value) })} />
+              <button type="button" className="self-end text-caption text-accent-orange" onClick={() => setForm({ ...form, displayRatingMode: "AUTOMATIC", displayRating: null, displayReviewCountMode: "AUTOMATIC", displayReviewCount: null, displayBuyerCountMode: "AUTOMATIC", displayBuyerCount: null })}>Reset Automatic</button>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <label className="text-caption text-white/50">Review count mode
+                <select value={form.displayReviewCountMode} onChange={(e) => setForm({ ...form, displayReviewCountMode: e.target.value as "AUTOMATIC" | "MANAGED" })} className="mt-1 w-full rounded-md border border-white/10 bg-bg-secondary px-3 py-2 text-white">
+                  <option value="AUTOMATIC">Automatic</option>
+                  <option value="MANAGED">Managed</option>
+                </select>
+              </label>
+              <Input label="Review count hiển thị" type="number" min={0} value={form.displayReviewCount ?? ""} onChange={(e) => setForm({ ...form, displayReviewCount: e.target.value === "" ? null : Number(e.target.value) })} />
+              <label className="text-caption text-white/50">Buyer count mode
+                <select value={form.displayBuyerCountMode} onChange={(e) => setForm({ ...form, displayBuyerCountMode: e.target.value as "AUTOMATIC" | "MANAGED" })} className="mt-1 w-full rounded-md border border-white/10 bg-bg-secondary px-3 py-2 text-white">
+                  <option value="AUTOMATIC">Automatic</option>
+                  <option value="MANAGED">Managed</option>
+                </select>
+              </label>
+              <Input label="Buyer count hiển thị" type="number" min={0} value={form.displayBuyerCount ?? ""} onChange={(e) => setForm({ ...form, displayBuyerCount: e.target.value === "" ? null : Number(e.target.value) })} />
+            </div>
+          </div>
+
+          {(() => {
+            const quality = computeProductQuality(form);
+            return (
+              <div className="rounded-2xl border border-white/10 p-4">
+                <p className="text-small text-white/80">Product quality: {quality.score}/100</p>
+                {quality.missing.length > 0 ? <p className="mt-2 text-caption text-white/40">Thiếu: {quality.missing.map((item) => item.label).join(", ")}</p> : <p className="mt-2 text-caption text-state-success">Đủ thông tin cơ bản.</p>}
+              </div>
+            );
+          })()}
+
+          {editing ? (
+            <a href={`/san-pham/${editing.slug}`} target="_blank" rel="noreferrer" className="text-small text-accent-orange">Preview as customer →</a>
+          ) : null}
+
           <Button onClick={handleSubmit} isLoading={createProduct.isPending || updateProduct.isPending}>
             {editing ? "Lưu thay đổi" : "Tạo sản phẩm"}
           </Button>

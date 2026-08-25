@@ -10,16 +10,30 @@ interface Paginated<T> {
 export interface ProductFilters {
   q?: string;
   category?: string;
+  collection?: string;
   sort?: string;
   page?: number;
+  featured?: boolean;
+  bestseller?: boolean;
+  isNew?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
 }
 
 export function useProducts(filters: ProductFilters) {
   const params = new URLSearchParams();
   if (filters.q) params.set("q", filters.q);
   if (filters.category) params.set("category", filters.category);
+  if (filters.collection) params.set("collection", filters.collection);
   if (filters.sort) params.set("sort", filters.sort);
   if (filters.page) params.set("page", String(filters.page));
+  if (filters.featured) params.set("featured", "true");
+  if (filters.bestseller) params.set("bestseller", "true");
+  if (filters.isNew) params.set("new", "true");
+  if (filters.minPrice != null) params.set("minPrice", String(filters.minPrice));
+  if (filters.maxPrice != null) params.set("maxPrice", String(filters.maxPrice));
+  if (filters.minRating != null) params.set("minRating", String(filters.minRating));
 
   return useQuery({
     queryKey: ["products", filters],
@@ -36,6 +50,11 @@ export interface ProductDetail extends ProductCardData {
   compatibility: string | null;
   fileSizeMb: number | null;
   releaseNotes: string | null;
+  licenseType?: string | null;
+  licenseTerms?: string | null;
+  previewVideoUrl?: string | null;
+  tags?: string[];
+  buyerCount?: number;
   averageRating: number;
   category: { id: string; name: string; slug: string } | null;
   reviews: {

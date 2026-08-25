@@ -4,9 +4,23 @@ import { api } from "@/lib/api-client";
 export interface DownloadItem {
   id: string;
   token: string;
+  productId?: string;
   downloadCount: number;
   createdAt: string;
-  product: { name: string; thumbnailUrl: string; slug: string; version: string; fileSizeMb: number | null };
+  product: {
+    id?: string;
+    name: string;
+    thumbnailUrl: string;
+    slug: string;
+    version: string;
+    fileSizeMb: number | null;
+    compatibility?: string | null;
+    licenseType?: string | null;
+    licenseTerms?: string | null;
+    releaseNotes?: string | null;
+    updatedAt?: string;
+  };
+  vault?: { pinned: boolean; notes: string | null; tags: string[] };
 }
 
 interface Paginated<T> {

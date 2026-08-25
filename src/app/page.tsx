@@ -11,6 +11,7 @@ import { FAQSection } from "@/components/home/FAQSection";
 import { FinalCtaSection } from "@/components/home/FinalCtaSection";
 import { WhyVaultSection } from "@/components/home/WhyVaultSection";
 import { RecentlyViewedSection } from "@/components/home/RecentlyViewedSection";
+import { CollectionsStrip } from "@/components/home/CollectionsStrip";
 import { getSiteSettings } from "@/lib/settings";
 import type { ProductCardData } from "@/components/home/ProductCard";
 
@@ -44,6 +45,9 @@ const PRODUCT_CARD_SELECT = {
   salesCount: true,
   isFeatured: true,
   isVipOnly: true,
+  isBestseller: true,
+  isEditorsPick: true,
+  createdAt: true,
   featureBullets: true,
   category: { select: { name: true } }
 } as const;
@@ -73,6 +77,9 @@ type ProductCardRow = {
   salesCount: number;
   isFeatured: boolean;
   isVipOnly: boolean;
+  isBestseller?: boolean;
+  isEditorsPick?: boolean;
+  createdAt?: Date;
   featureBullets: string[];
   category: { name: string } | null;
 };
@@ -96,6 +103,9 @@ function serializeProduct(p: PrismaProduct, rating?: RatingSummary): ProductCard
     salesCount: p.salesCount,
     isFeatured: p.isFeatured,
     isVipOnly: p.isVipOnly,
+    isBestseller: p.isBestseller,
+    isEditorsPick: p.isEditorsPick,
+    createdAt: p.createdAt.toISOString(),
     featureBullets: p.featureBullets,
     category: p.category,
     averageRating: rating?.averageRating ?? 0,
@@ -180,6 +190,7 @@ export default async function HomePage() {
         }} />
         <ProductGridSection title="Sản phẩm nổi bật" subtitle="Những tài sản được chọn để tạo ấn tượng ngay từ lần đầu khám phá." products={featured.map((p: ProductCardRow) => serializeProduct(p, ratingMap.get(p.id)))} />
         <CategoriesGrid categories={categories} />
+        <CollectionsStrip />
         <ProductGridSection title="Mới nhất" subtitle="Những sản phẩm vừa xuất hiện trong Vault." products={latest.map((p: ProductCardRow) => serializeProduct(p, ratingMap.get(p.id)))} />
         <ProductGridSection title="🔥 Đang được quan tâm" subtitle="Xếp theo số lượt mua — chỉ hiển thị dữ liệu thật từ catalog." products={popular.map((p: ProductCardRow) => serializeProduct(p, ratingMap.get(p.id)))} />
         <WhyVaultSection />

@@ -53,7 +53,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             { "@type": "WebSite", name: "KhangHuynh Vault", url: SITE_URL, potentialAction: { "@type": "SearchAction", target: `${SITE_URL}/san-pham?q={search_term_string}`, "query-input": "required name=search_term_string" } }
           ]
         }) }} />
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem(\"khv-theme\");var l=localStorage.getItem(\"khv-language\");if(t===\"light\")document.documentElement.classList.add(\"theme-light\");if(l===\"en\")document.documentElement.lang=\"en\";}catch(e){}})()` }} />{settings.faviconUrl ? <link rel="icon" href={settings.faviconUrl} /> : null}</head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem("khv-theme");var l=localStorage.getItem("khv-language");var light=t==="light"||(t==="system"&&window.matchMedia("(prefers-color-scheme: light)").matches);if(light)document.documentElement.classList.add("theme-light");document.documentElement.dataset.themePreference=t||"dark";if(l==="en")document.documentElement.lang="en";}catch(e){}})()` }} />{settings.faviconUrl ? <link rel="icon" href={settings.faviconUrl} /> : null}</head>
       <body className="font-body antialiased">
         <Providers>
           {showMaintenance ? (

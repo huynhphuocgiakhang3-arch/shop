@@ -30,7 +30,14 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
 
     const ratingAgg = await prisma.review.aggregate({
       where: { productId: product.id, isHidden: false },
-      _avg: { rating: true }
+      _avg: { rating: true },
+      _count: { _all: true }
+    });
+    const { resolveProductMetrics } = await import("@/lib/commerce/display-metrics");
+    const metrics = resolveProductMetrics(product, {
+      averageRating: Number(ratingAgg._avg.rating ?? 0),
+      reviewCount: ratingAgg._count._all,
+      buyerCount: product.salesCount
     });
 
     const related = await prisma.product.findMany({
@@ -55,7 +62,15 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
     }
 
     return jsonOk({
-      product: { ...product, averageRating: ratingAgg._avg.rating ?? 0 },
+      product: {
+        ...product,
+        averageRating: metrics.rating,
+        reviewCount: metrics.reviewCount,
+        buyerCount: metrics.buyerCount,
+        realAverageRating: Number(ratingAgg._avg.rating ?? 0),
+        realReviewCount: ratingAgg._count._all,
+        realBuyerCount: product.salesCount
+      },
       related,
       isFavorited,
       hasPurchased

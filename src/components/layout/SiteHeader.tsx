@@ -8,6 +8,7 @@ import { Bell, ShoppingCart, Sparkles, Menu, X, LogIn, UserPlus, LayoutDashboard
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { useCurrentUser } from "@/hooks/useProfile";
+import { useCart } from "@/hooks/useCart";
 import { DisplayControls } from "@/components/preferences/DisplayControls";
 import { SearchCommandPalette } from "@/components/search/SearchCommandPalette";
 import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
@@ -15,16 +16,17 @@ import { useTranslation } from "@/lib/i18n/LocaleProvider";
 
 const NAV = [
   ["/san-pham", "Sản phẩm"],
-  ["/danh-muc", "Danh mục"],
+  ["/bo-suu-tap", "Bộ sưu tập"],
   ["/vault", "Vault"],
-  ["/trung-tam-tro-giup", "Trợ giúp"],
-  ["/lien-he", "Liên hệ"]
+  ["/trung-tam-tro-giup", "Trợ giúp"]
 ] as const;
 
 export function SiteHeader() {
   const { data } = useCurrentUser();
   const { t } = useTranslation();
   const user = data?.user;
+  const { data: cartData } = useCart();
+  const cartCount = user ? cartData?.summary.itemCount ?? 0 : 0;
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   // The drawer below is portalled to <body> (see render) — its own ancestor
@@ -91,6 +93,11 @@ export function SiteHeader() {
                 className="khv-touch-target khv-interactive khv-focus relative flex h-11 w-11 items-center justify-center rounded-full border border-white/[.08] bg-white/[.03] text-white/70 hover:border-white/15 hover:text-white"
               >
                 <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-orange px-1 text-[10px] font-bold text-black">
+                    {cartCount}
+                  </span>
+                ) : null}
               </Link>
               <Link
                 href="/trang-chu?tab=thong-bao"

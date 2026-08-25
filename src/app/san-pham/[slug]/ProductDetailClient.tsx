@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Heart, ShoppingCart, Download, ShieldCheck, ChevronLeft, PencilLine, Share2, Check } from "lucide-react";
+import { Star, Heart, ShoppingCart, Download, ShieldCheck, ChevronLeft, PencilLine, Share2, Check, FileKey, RefreshCw, Headset } from "lucide-react";
+import { ScrollProgress } from "@/components/ui/ScrollProgress";
+import { SafeImage } from "@/components/ui/SafeImage";
+import { trackRecentlyViewed } from "@/lib/commerce/recently-viewed";
 import Link from "next/link";
 import { ProductCard } from "@/components/home/ProductCard";
 import { useProduct, useCreateReview, type ProductDetailResponse } from "@/hooks/useProducts";
@@ -103,24 +106,31 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
   };
 
   useEffect(() => {
+    trackRecentlyViewed(slug);
     const onScroll = () => setShowStickyBar(window.scrollY > 520);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [slug]);
 
   return (
     <>
+      <ScrollProgress />
       <nav className="mb-6 flex items-center gap-1 text-caption text-white/35 sm:mb-8">
-        <Link href="/san-pham" className="khv-touch-target -ml-2 inline-flex items-center gap-1 rounded-full px-2 py-1 transition-colors hover:text-white/70">
-          <ChevronLeft className="h-3.5 w-3.5" /> Marketplace
+        <Link href="/san-pham" className="khv-touch-target -ml-2 inline-flex items-center gap-1 rounded-full px-2 py-1 transition-colors hover:text-white/70 sm:hidden">
+          <ChevronLeft className="h-3.5 w-3.5" /> {product.category?.name ?? "Marketplace"}
         </Link>
-        {product.category && (
-          <>
-            <span className="opacity-40">/</span>
-            <span className="truncate text-white/50">{product.category.name}</span>
-          </>
-        )}
+        <div className="hidden items-center gap-1 sm:flex">
+          <Link href="/" className="hover:text-white/70">Trang chủ</Link>
+          <span className="opacity-40">/</span>
+          <Link href="/san-pham" className="hover:text-white/70">Marketplace</Link>
+          {product.category && (
+            <>
+              <span className="opacity-40">/</span>
+              <Link href={`/san-pham?category=${product.category.slug}`} className="truncate hover:text-white/70">{product.category.name}</Link>
+            </>
+          )}
+        </div>
       </nav>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
@@ -139,7 +149,7 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
                 transition={{ duration: 0.25, ease: EASE_PREMIUM }}
                 className="absolute inset-0"
               >
-                <Image
+                <SafeImage
                   src={images[activeImage] ?? product.thumbnailUrl}
                   alt={product.name}
                   fill
@@ -188,10 +198,10 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
               ))}
             </div>
             <span className="text-caption text-white/40">
-              {product.averageRating > 0 ? product.averageRating.toFixed(1) : "Chưa có"} · {product.reviews.length} đánh giá
+              {product.averageRating > 0 ? product.averageRating.toFixed(1) : "Chưa có"} · {(product.reviewCount ?? product.reviews.length)} đánh giá
             </span>
-            {typeof product.salesCount === "number" && product.salesCount > 0 && (
-              <span className="text-caption text-white/30">· {product.salesCount} đã bán</span>
+            {(product.buyerCount ?? product.salesCount ?? 0) > 0 && (
+              <span className="text-caption text-white/30">· {product.buyerCount ?? product.salesCount} đã bán</span>
             )}
           </div>
 
@@ -227,8 +237,11 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
             </Button>
           </div>
 
-          <div className="mt-6 flex items-center gap-2 text-caption text-white/35">
-            <ShieldCheck className="h-3.5 w-3.5 shrink-0" /> Giao hàng số tức thì sau khi thanh toán
+          <div className="mt-6 grid gap-2 text-caption text-white/45">
+            <p className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5" /> Giao hàng số tức thì sau khi thanh toán</p>
+            {product.compatibility ? <p className="flex items-center gap-2"><RefreshCw className="h-3.5 w-3.5" /> Tương thích: {product.compatibility}</p> : null}
+            {product.licenseType ? <p className="flex items-center gap-2"><FileKey className="h-3.5 w-3.5" /> Giấy phép: {product.licenseType}</p> : null}
+            <p className="flex items-center gap-2"><Headset className="h-3.5 w-3.5" /> Hỗ trợ qua trung tâm trợ giúp sau khi mua</p>
           </div>
 
           <GlassPanel radius="md" className="mt-6 grid grid-cols-2 gap-4 p-5 text-small">
@@ -242,14 +255,49 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
                 <p className="text-white/80">{product.compatibility}</p>
               </div>
             )}
+            {product.fileSizeMb ? (
+              <div>
+                <p className="text-caption text-white/35">Dung lượng</p>
+                <p className="text-white/80">{product.fileSizeMb} MB</p>
+              </div>
+            ) : null}
+            {product.licenseType ? (
+              <div>
+                <p className="text-caption text-white/35">Giấy phép</p>
+                <p className="text-white/80">{product.licenseType}</p>
+              </div>
+            ) : null}
           </GlassPanel>
         </motion.div>
       </div>
+
+      {(product.featureBullets?.length ?? 0) > 0 && (
+        <GlassPanel radius="md" className="mt-10 p-5 sm:p-6">
+          <h2 className="mb-3 text-title text-white">Có gì trong sản phẩm</h2>
+          <ul className="grid gap-2 text-small text-white/65">
+            {product.featureBullets?.map((item) => <li key={item}>• {item}</li>)}
+          </ul>
+        </GlassPanel>
+      )}
 
       <GlassPanel radius="md" className="mt-10 p-5 sm:p-6">
         <h2 className="mb-3 text-title text-white">Mô tả sản phẩm</h2>
         <p className="whitespace-pre-wrap text-small leading-7 text-white/60">{product.description}</p>
       </GlassPanel>
+
+      {product.releaseNotes ? (
+        <GlassPanel radius="md" className="mt-6 p-5 sm:p-6">
+          <h2 className="mb-3 text-title text-white">Changelog</h2>
+          <p className="whitespace-pre-wrap text-small leading-7 text-white/60">{product.releaseNotes}</p>
+        </GlassPanel>
+      ) : null}
+
+      {product.licenseTerms ? (
+        <GlassPanel radius="md" className="mt-6 p-5 sm:p-6">
+          <h2 className="mb-3 text-title text-white">Điều khoản giấy phép</h2>
+          <p className="whitespace-pre-wrap text-small leading-7 text-white/60">{product.licenseTerms}</p>
+        </GlassPanel>
+      ) : null}
 
       <div className="mt-10">
         <h2 className="mb-4 text-title text-white">Đánh giá ({product.reviews.length})</h2>
@@ -315,21 +363,23 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
           fixed element with no ancestor that gains backdrop-filter/transform
           — same reasoning already applied to the bottom nav elsewhere. */}
       <AnimatePresence>
-        {showStickyBar && !hasPurchased && (
+        {showStickyBar && (
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ duration: 0.28, ease: EASE_PREMIUM }}
-            className="khv-sticky-buy-bar fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#05070c]/95 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur-2xl lg:hidden"
+            className="khv-sticky-buy-bar fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#05070c]/95 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur-2xl"
           >
-            <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
+            <div className="mx-auto flex max-w-5xl items-center gap-3">
+              <div className="hidden min-w-0 flex-1 sm:block">
                 <p className="truncate text-caption text-white/40">{product.name}</p>
+              </div>
+              <div className="min-w-0 flex-1 sm:flex-none">
                 <p className={cn("text-title font-bold", hasDiscount ? "text-accent-orange" : "text-white")}>{formatVnd(displayPrice)}</p>
               </div>
-              <Button className="khv-touch-target shrink-0" onClick={handleBuyNow} isLoading={addToCart.isPending}>
-                Mua ngay
+              <Button className="khv-touch-target shrink-0" onClick={hasPurchased ? () => router.push("/tai-xuong") : handleBuyNow} isLoading={addToCart.isPending}>
+                {hasPurchased ? "Mở Vault" : "Mua ngay"}
               </Button>
             </div>
           </motion.div>

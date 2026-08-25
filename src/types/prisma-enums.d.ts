@@ -54,6 +54,9 @@ declare module "@prisma/client" {
   export type ProductStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
   export const ProductStatus: { DRAFT: "DRAFT"; PUBLISHED: "PUBLISHED"; ARCHIVED: "ARCHIVED" };
 
+  export type DisplayMetricMode = "AUTOMATIC" | "MANAGED";
+  export const DisplayMetricMode: { AUTOMATIC: "AUTOMATIC"; MANAGED: "MANAGED" };
+
   export type OrderStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "CANCELLED";
   export const OrderStatus: {
     PENDING: "PENDING"; PAID: "PAID"; FAILED: "FAILED"; REFUNDED: "REFUNDED"; CANCELLED: "CANCELLED";

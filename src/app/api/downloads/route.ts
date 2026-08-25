@@ -20,12 +20,39 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: "desc" },
         skip,
         take,
-        include: { product: { select: { name: true, thumbnailUrl: true, slug: true, version: true, fileSizeMb: true } } }
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              thumbnailUrl: true,
+              slug: true,
+              version: true,
+              fileSizeMb: true,
+              compatibility: true,
+              licenseType: true,
+              licenseTerms: true,
+              releaseNotes: true,
+              updatedAt: true
+            }
+          }
+        }
       }),
       prisma.downloadToken.count({ where: { userId: user.sub } })
     ]);
 
-    return jsonOk(paginatedResponse(items, total, page, pageSize));
+    type DownloadRow = (typeof items)[number];
+    type VaultMetaRow = { productId: string; pinned: boolean; notes: string | null; tags: string[] };
+    const metas = await prisma.vaultItem.findMany({
+      where: { userId: user.sub, productId: { in: items.map((item: DownloadRow) => item.productId) } }
+    });
+    const metaMap = new Map(metas.map((item: VaultMetaRow) => [item.productId, item]));
+    const enriched = items.map((item: DownloadRow) => ({
+      ...item,
+      vault: metaMap.get(item.productId) ?? { pinned: false, notes: null, tags: [] as string[] }
+    }));
+
+    return jsonOk(paginatedResponse(enriched, total, page, pageSize));
   } catch (error) {
     return handleApiError(error, "downloads:GET");
   }

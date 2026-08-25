@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "@/components/ui/Toast";
 import { MusicProvider } from "@/components/music/MusicProvider";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider";
+import { CompareProvider } from "@/components/commerce/CompareProvider";
+import { OfflineBanner } from "@/components/ui/OfflineBanner";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -20,7 +22,12 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={client}>
       <ToastProvider>
         <LocaleProvider>
-          <MusicProvider>{children}</MusicProvider>
+          <CompareProvider>
+            <MusicProvider>
+              <OfflineBanner />
+              {children}
+            </MusicProvider>
+          </CompareProvider>
         </LocaleProvider>
       </ToastProvider>
     </QueryClientProvider>

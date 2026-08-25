@@ -24,6 +24,20 @@ export interface AdminProduct {
   version?: string;
   fileSizeMb?: number | null;
   compatibility?: string | null;
+  licenseType?: string | null;
+  licenseTerms?: string | null;
+  tags?: string[];
+  isBestseller?: boolean;
+  isEditorsPick?: boolean;
+  isLimited?: boolean;
+  isPopular?: boolean;
+  displayRatingMode?: "AUTOMATIC" | "MANAGED";
+  displayRating?: number | null;
+  displayReviewCountMode?: "AUTOMATIC" | "MANAGED";
+  displayReviewCount?: number | null;
+  displayBuyerCountMode?: "AUTOMATIC" | "MANAGED";
+  displayBuyerCount?: number | null;
+  previewVideoUrl?: string | null;
 }
 
 export interface ProductFormInput {
@@ -46,6 +60,20 @@ export interface ProductFormInput {
   version?: string;
   fileSizeMb?: number;
   compatibility?: string;
+  licenseType?: string;
+  licenseTerms?: string;
+  tags?: string[];
+  isBestseller?: boolean;
+  isEditorsPick?: boolean;
+  isLimited?: boolean;
+  isPopular?: boolean;
+  displayRatingMode?: "AUTOMATIC" | "MANAGED";
+  displayRating?: number | null;
+  displayReviewCountMode?: "AUTOMATIC" | "MANAGED";
+  displayReviewCount?: number | null;
+  displayBuyerCountMode?: "AUTOMATIC" | "MANAGED";
+  displayBuyerCount?: number | null;
+  previewVideoUrl?: string;
 }
 
 interface Paginated<T> {

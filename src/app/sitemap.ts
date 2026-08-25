@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Note: "/quen-mat-khau" (forgot password) is intentionally excluded — it's
   // disallowed in robots.ts, so listing it here would be a conflicting signal
   // (an indexable sitemap entry for a page crawlers are told not to fetch).
-  const staticRoutes = ["/", "/san-pham", "/danh-muc", "/vault", "/thanh-vien", "/trung-tam-tro-giup", "/lien-he"].map(path => ({ url: `${base}${path}`, changeFrequency: path === "/" ? "daily" as const : "weekly" as const, priority: path === "/" ? 1 : 0.7 }));
+  const staticRoutes = ["/", "/san-pham", "/danh-muc", "/bo-suu-tap", "/vault", "/thanh-vien", "/trung-tam-tro-giup", "/lien-he"].map(path => ({ url: `${base}${path}`, changeFrequency: path === "/" ? "daily" as const : "weekly" as const, priority: path === "/" ? 1 : 0.7 }));
   try {
     const [products, categories] = await Promise.all([
       prisma.product.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, updatedAt: true } }),
@@ -25,7 +25,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [
       ...staticRoutes,
       ...products.map((p: { slug: string; updatedAt: Date }) => ({ url: `${base}/san-pham/${p.slug}`, lastModified: p.updatedAt, changeFrequency: "weekly" as const, priority: 0.8 })),
-      ...categories.map((c: { slug: string }) => ({ url: `${base}/san-pham?category=${encodeURIComponent(c.slug)}`, changeFrequency: "weekly" as const, priority: 0.6 }))
+      ...categories.map((c: { slug: string }) => ({ url: `${base}/san-pham?category=${encodeURIComponent(c.slug)}`, changeFrequency: "weekly" as const, priority: 0.6 })),
+      ...(await prisma.collection.findMany({ select: { slug: true, updatedAt: true } })).map((c: { slug: string; updatedAt: Date }) => ({ url: `${base}/bo-suu-tap/${c.slug}`, lastModified: c.updatedAt, changeFrequency: "weekly" as const, priority: 0.6 }))
     ];
   } catch { return staticRoutes; }
 }

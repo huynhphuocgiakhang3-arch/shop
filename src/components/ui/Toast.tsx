@@ -7,14 +7,20 @@ import { cn } from "@/lib/utils";
 import { EASE_PREMIUM } from "@/lib/motion";
 
 type ToastVariant = "success" | "error" | "info" | "warning" | "loading";
+interface ToastAction {
+  undoLabel?: string;
+  onUndo?: () => void;
+}
+
 interface Toast {
   id: string;
   message: string;
   variant: ToastVariant;
+  action?: ToastAction;
 }
 
 interface ToastContextValue {
-  show: (message: string, variant?: ToastVariant) => void;
+  show: (message: string, variant?: ToastVariant, action?: ToastAction) => string;
   /** Returns the toast id so a "loading" toast can be dismissed/replaced once the async work resolves. */
   dismiss: (id: string) => void;
 }
@@ -43,14 +49,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const dismiss = useCallback((id: string) => setToasts((prev) => prev.filter((t) => t.id !== id)), []);
 
   const show = useCallback(
-    (message: string, variant: ToastVariant = "info") => {
+    (message: string, variant: ToastVariant = "info", action?: ToastAction) => {
       const id = Math.random().toString(36).slice(2);
-      setToasts((prev) => [...prev, { id, message, variant }]);
-      // A "loading" toast represents work in progress — the caller is
-      // responsible for dismissing (or replacing) it once that resolves,
-      // so it must not auto-dismiss on a timer like the others.
+      setToasts((prev) => [...prev, { id, message, variant, action }]);
       if (variant !== "loading") {
-        setTimeout(() => dismiss(id), 4000);
+        setTimeout(() => dismiss(id), action?.onUndo ? 6000 : 4000);
       }
       return id;
     },
@@ -87,6 +90,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               >
                 <Icon className={cn("h-4 w-4 shrink-0", COLORS[toast.variant], toast.variant === "loading" && "animate-spin")} />
                 <span className="text-small text-white/85">{toast.message}</span>
+                {toast.action?.onUndo ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.action?.onUndo?.();
+                      dismiss(toast.id);
+                    }}
+                    className="text-[11px] font-bold uppercase tracking-[.12em] text-accent-orange"
+                  >
+                    {toast.action.undoLabel ?? "Hoàn tác"}
+                  </button>
+                ) : null}
                 {toast.variant !== "loading" && (
                   <button onClick={() => dismiss(toast.id)} className="khv-touch-target ml-auto -mr-1.5 flex h-8 w-8 items-center justify-center text-white/30 hover:text-white/60 focus-visible:text-white/70 focus-visible:outline-none" aria-label="Đóng thông báo">
                     <X className="h-3.5 w-3.5" />

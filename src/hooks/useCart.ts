@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
+import { useCurrentUser } from "@/hooks/useProfile";
 
 export interface CartItem {
   id: string;
@@ -33,7 +34,13 @@ export interface CartResponse {
 const CART_KEY = ["cart"];
 
 export function useCart() {
-  return useQuery({ queryKey: CART_KEY, queryFn: () => api.get<CartResponse>("/api/cart") });
+  const { data } = useCurrentUser();
+  return useQuery({
+    queryKey: CART_KEY,
+    enabled: Boolean(data?.user),
+    queryFn: () => api.get<CartResponse>("/api/cart"),
+    retry: false
+  });
 }
 
 export function useAddToCart() {

@@ -2,26 +2,19 @@ import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { jsonOk, parsePagination, paginatedResponse, handleApiError } from "@/lib/api";
+import { enrichStorefrontProduct } from "@/lib/commerce/enrich-products";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// `satisfies` (not a `: Record<string, ...>` annotation) keeps the
-// inferred type as a literal object with these six exact keys, rather than
-// widening it to an index signature. `sort` comes from a query string, so
-// it's arbitrary user input — SORT_OPTIONS[sort] would still be
-// `T | undefined` if indexed directly (correctly so, since an attacker can
-// send `?sort=drop-table`). The type guard below narrows it to the exact
-// key union first, so the actual lookup is provably defined instead of
-// being silently rescued by a `?? SORT_OPTIONS.newest` fallback that was
-// itself flagged as possibly undefined under noUncheckedIndexedAccess.
 const SORT_OPTIONS = {
   newest: { createdAt: "desc" as const },
   oldest: { createdAt: "asc" as const },
   "price-asc": { price: "asc" as const },
   "price-desc": { price: "desc" as const },
   popular: { salesCount: "desc" as const },
-  downloads: { downloadCount: "desc" as const }
+  downloads: { downloadCount: "desc" as const },
+  rating: { salesCount: "desc" as const }
 } satisfies Record<string, Prisma.ProductOrderByWithRelationInput>;
 
 type SortKey = keyof typeof SORT_OPTIONS;
@@ -37,10 +30,14 @@ export async function GET(req: NextRequest) {
 
     const q = sp.get("q")?.trim();
     const categorySlug = sp.get("category")?.trim();
+    const collectionSlug = sp.get("collection")?.trim();
     const tag = sp.get("tag")?.trim();
     const featured = sp.get("featured");
+    const bestseller = sp.get("bestseller");
+    const isNew = sp.get("new");
     const minPrice = sp.get("minPrice");
     const maxPrice = sp.get("maxPrice");
+    const minRating = Number(sp.get("minRating") ?? "");
     const rawSort = sp.get("sort") ?? "newest";
     const sortKey: SortKey = isSortKey(rawSort) ? rawSort : "newest";
 
@@ -54,8 +51,11 @@ export async function GET(req: NextRequest) {
         ]
       }),
       ...(categorySlug && { category: { slug: categorySlug } }),
+      ...(collectionSlug && { collections: { some: { collection: { slug: collectionSlug } } } }),
       ...(tag && { tags: { has: tag } }),
       ...(featured === "true" && { isFeatured: true }),
+      ...(bestseller === "true" && { isBestseller: true }),
+      ...(isNew === "true" && { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
       ...((minPrice || maxPrice) && {
         price: {
           ...(minPrice && { gte: Number(minPrice) }),
@@ -64,12 +64,20 @@ export async function GET(req: NextRequest) {
       })
     };
 
-    const orderBy: Prisma.ProductOrderByWithRelationInput = SORT_OPTIONS[sortKey];
+    if (Number.isFinite(minRating) && minRating > 0) {
+      const rated = await prisma.review.groupBy({
+        by: ["productId"],
+        where: { isHidden: false },
+        _avg: { rating: true },
+        having: { rating: { _avg: { gte: minRating } } }
+      });
+      where.id = { in: rated.map((row: { productId: string }) => row.productId) };
+    }
 
     const [items, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        orderBy,
+        orderBy: SORT_OPTIONS[sortKey],
         skip,
         take,
         select: {
@@ -83,10 +91,24 @@ export async function GET(req: NextRequest) {
           featureBullets: true,
           isVipOnly: true,
           isFeatured: true,
+          isBestseller: true,
+          isEditorsPick: true,
+          isLimited: true,
+          isPopular: true,
+          licenseType: true,
+          version: true,
+          compatibility: true,
+          fileSizeMb: true,
           salesCount: true,
           downloadCount: true,
           tags: true,
           createdAt: true,
+          displayRatingMode: true,
+          displayRating: true,
+          displayReviewCountMode: true,
+          displayReviewCount: true,
+          displayBuyerCountMode: true,
+          displayBuyerCount: true,
           category: { select: { name: true, slug: true } },
           _count: { select: { reviews: true } }
         }
@@ -94,18 +116,26 @@ export async function GET(req: NextRequest) {
       prisma.product.count({ where })
     ]);
 
-    type ProductListItem = typeof items[number];
+    type ProductListItem = (typeof items)[number];
     type RatingRow = { productId: string; _avg: { rating: number | null }; _count: { _all: number } };
-    const ratings = await prisma.review.groupBy({
+    const ratings = (await prisma.review.groupBy({
       by: ["productId"],
       where: { productId: { in: items.map((item: ProductListItem) => item.id) }, isHidden: false },
       _avg: { rating: true },
       _count: { _all: true }
-    }) as RatingRow[];
+    })) as RatingRow[];
     const ratingMap = new Map<string, { averageRating: number; reviewCount: number }>(
       ratings.map((r: RatingRow) => [r.productId, { averageRating: Number(r._avg.rating ?? 0), reviewCount: r._count._all }])
     );
-    const enriched = items.map((item: ProductListItem) => ({ ...item, ...(ratingMap.get(item.id) ?? { averageRating: 0, reviewCount: 0 }) }));
+
+    let enriched = items.map((item: ProductListItem) =>
+      enrichStorefrontProduct(item, ratingMap.get(item.id) ?? { averageRating: 0, reviewCount: 0 })
+    );
+
+    if (sortKey === "rating") {
+      enriched = [...enriched].sort((a, b) => b.averageRating - a.averageRating || b.reviewCount - a.reviewCount);
+    }
+
     return jsonOk(paginatedResponse(enriched, total, page, pageSize));
   } catch (error) {
     return handleApiError(error, "products:GET");

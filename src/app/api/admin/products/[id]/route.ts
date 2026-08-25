@@ -4,13 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { productUpdateSchema } from "@/lib/validations/product";
 import { jsonError, jsonOk, handleApiError } from "@/lib/api";
+import { requestMeta, writeAuditLog } from "@/lib/audit";
+import { validateManagedMetrics } from "@/lib/commerce/display-metrics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { response } = await requireSuperAdmin();
+    const { user, response } = await requireSuperAdmin();
     if (response) return response;
 
     const body = await req.json().catch(() => null);
@@ -18,6 +20,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!parsed.success) {
       return jsonError(parsed.error.issues[0]?.message ?? "Thông tin sản phẩm không hợp lệ.", 422);
     }
+
+    const metricError = validateManagedMetrics(parsed.data);
+    if (metricError) return jsonError(metricError, 422);
 
     const existing = await prisma.product.findUnique({ where: { id: params.id } });
     if (!existing) return jsonError("Không tìm thấy sản phẩm.", 404);
@@ -48,6 +53,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     revalidatePath("/");
     revalidatePath("/san-pham");
     revalidatePath(`/san-pham/${product.slug}`);
+
+    await writeAuditLog({
+      userId: user.sub,
+      action: "SUPER_ADMIN_UPDATE_PRODUCT",
+      metadata: { productId: product.id, slug: product.slug },
+      ...requestMeta(req)
+    });
 
     return jsonOk({ product });
   } catch (error) {
