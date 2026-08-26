@@ -74,7 +74,9 @@ const COMMERCE_DDL = [
   `ALTER TABLE "VaultItem" DROP CONSTRAINT IF EXISTS "VaultItem_userId_fkey"`,
   `ALTER TABLE "VaultItem" ADD CONSTRAINT "VaultItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
   `ALTER TABLE "VaultItem" DROP CONSTRAINT IF EXISTS "VaultItem_productId_fkey"`,
-  `ALTER TABLE "VaultItem" ADD CONSTRAINT "VaultItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE`
+  `ALTER TABLE "VaultItem" ADD CONSTRAINT "VaultItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+  `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "paymentNote" TEXT`,
+  `ALTER TABLE "OrderItem" ADD COLUMN IF NOT EXISTS "licenseKey" TEXT`
 ] as const;
 
 let schemaReady = false;
@@ -124,13 +126,14 @@ async function applyCommerceDdl(client: PrismaClient): Promise<void> {
 }
 
 async function probeAndApply(client: PrismaClient): Promise<void> {
-  const [hasBestseller, hasCollection, hasVaultItem] = await Promise.all([
+  const [hasBestseller, hasCollection, hasVaultItem, hasLicenseKey] = await Promise.all([
     columnExists(client, "Product", "isBestseller"),
     tableExists(client, "Collection"),
-    tableExists(client, "VaultItem")
+    tableExists(client, "VaultItem"),
+    columnExists(client, "OrderItem", "licenseKey")
   ]);
 
-  if (hasBestseller && hasCollection && hasVaultItem) {
+  if (hasBestseller && hasCollection && hasVaultItem && hasLicenseKey) {
     schemaReady = true;
     return;
   }

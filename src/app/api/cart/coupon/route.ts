@@ -50,7 +50,16 @@ export async function POST(req: NextRequest) {
       return jsonError("Hạng thành viên của bạn chưa đủ điều kiện dùng mã này.", 403);
     }
 
+    const couponWithProducts = await prisma.coupon.findUnique({
+      where: { id: coupon.id },
+      include: { products: { select: { id: true } } }
+    });
     const cart = await getOrCreateCart(user.sub);
+    const scopedIds = couponWithProducts?.products.map((product: { id: string }) => product.id) ?? [];
+    if (scopedIds.length > 0) {
+      const matches = cart.items.some((item) => !item.savedForLater && scopedIds.includes(item.productId));
+      if (!matches) return jsonError("Mã này chỉ áp dụng cho sản phẩm được chỉ định. Thêm sản phẩm đủ điều kiện vào giỏ trước.", 400);
+    }
     await prisma.cart.update({ where: { id: cart.id }, data: { couponId: coupon.id } });
 
     const updated = await getOrCreateCart(user.sub);

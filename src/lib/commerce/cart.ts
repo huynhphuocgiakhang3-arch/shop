@@ -8,8 +8,11 @@ const TAX_RATE = Number(process.env.TAX_RATE ?? 0); // e.g. 0.08 for 8% VAT — 
 // compatible; before generate they resolve to `any`, so we declare them
 // explicitly here to keep TypeScript strict mode happy in all environments.
 export interface CartProduct {
+  id?: string;
   price: unknown;
   discountPrice: unknown;
+  stock?: number | null;
+  isVipOnly?: boolean;
 }
 
 export interface CartItem {
@@ -26,6 +29,7 @@ export interface CartCoupon {
   usageCount: number;
   discountType: string;
   discountValue: unknown;
+  products?: { id: string }[];
 }
 
 export interface CartWithItems {
@@ -39,13 +43,13 @@ export interface CartWithItems {
 export async function getOrCreateCart(userId: string): Promise<CartWithItems> {
   const existing = await prisma.cart.findUnique({
     where: { userId },
-    include: { items: { include: { product: true } }, coupon: true }
+    include: { items: { include: { product: true } }, coupon: { include: { products: { select: { id: true } } } } }
   });
   if (existing) return existing as CartWithItems;
 
   return prisma.cart.create({
     data: { userId },
-    include: { items: { include: { product: true } }, coupon: true }
+    include: { items: { include: { product: true } }, coupon: { include: { products: { select: { id: true } } } } }
   }) as Promise<CartWithItems>;
 }
 
@@ -61,11 +65,20 @@ export function computeCartSummary(cart: CartWithItems) {
   if (cart.coupon && cart.coupon.isActive) {
     const notExpired = !cart.coupon.expiresAt || cart.coupon.expiresAt > new Date();
     const underLimit = !cart.coupon.usageLimit || cart.coupon.usageCount < cart.coupon.usageLimit;
-    if (notExpired && underLimit) {
+    const scopedIds = cart.coupon.products?.map((product) => product.id) ?? [];
+    const eligibleSubtotal = scopedIds.length
+      ? activeItems
+          .filter((item: CartItem) => scopedIds.includes(item.productId) || (item.product.id != null && scopedIds.includes(item.product.id)))
+          .reduce((sum: number, item: CartItem) => {
+            const unitPrice = item.product.discountPrice ?? item.product.price;
+            return sum + Number(unitPrice) * item.quantity;
+          }, 0)
+      : subtotal;
+    if (notExpired && underLimit && eligibleSubtotal > 0) {
       discountTotal =
         cart.coupon.discountType === "PERCENT"
-          ? subtotal * (Number(cart.coupon.discountValue) / 100)
-          : Math.min(subtotal, Number(cart.coupon.discountValue));
+          ? eligibleSubtotal * (Number(cart.coupon.discountValue) / 100)
+          : Math.min(eligibleSubtotal, Number(cart.coupon.discountValue));
     }
   }
 

@@ -307,6 +307,7 @@ model Order {
   paidAt        DateTime?
   refundedAt    DateTime?
   adminNote     String?
+  paymentNote   String?
   coupon        Coupon?       @relation(fields: [couponId], references: [id])
   user          User          @relation(fields: [userId], references: [id])
   items         OrderItem[]
@@ -321,6 +322,7 @@ model OrderItem {
   productId      String
   unitPrice      Decimal         @db.Decimal(12, 2)
   quantity       Int             @default(1)
+  licenseKey     String?
   downloadTokens DownloadToken[]
   order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product        Product         @relation(fields: [productId], references: [id])

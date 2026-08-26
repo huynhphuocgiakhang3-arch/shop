@@ -55,12 +55,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         }) }} />
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem("khv-theme");var l=localStorage.getItem("khv-language");var light=t==="light"||(t==="system"&&window.matchMedia("(prefers-color-scheme: light)").matches);if(light)document.documentElement.classList.add("theme-light");document.documentElement.dataset.themePreference=t||"dark";if(l==="en")document.documentElement.lang="en";}catch(e){}})()` }} />{settings.faviconUrl ? <link rel="icon" href={settings.faviconUrl} /> : null}</head>
       <body className="font-body antialiased">
+        <a href="#noi-dung" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[200] focus:rounded-full focus:bg-accent-orange focus:px-4 focus:py-2 focus:text-black">
+          Bỏ qua điều hướng
+        </a>
         <Providers>
           {showMaintenance ? (
             <MaintenancePage message={settings.maintenanceMessage} />
           ) : (
             <>
-              <RouteTransition>{children}</RouteTransition>
+              <RouteTransition><div id="noi-dung">{children}</div></RouteTransition>
               <SiteChrome />
             </>
           )}

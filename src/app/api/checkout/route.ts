@@ -5,10 +5,13 @@ import { prisma } from "@/lib/prisma";
 import { requireActiveUser } from "@/lib/auth/guard";
 import { checkoutSchema } from "@/lib/validations/commerce";
 import { getOrCreateCart, computeCartSummary, type CartWithItems } from "@/lib/commerce/cart";
-import { generateOrderNumber, generateSecureToken } from "@/lib/tokens";
+import { generateOrderNumber } from "@/lib/tokens";
 import { jsonError, jsonOk, logApiError } from "@/lib/api";
 import { isSameOrigin } from "@/lib/security/same-origin";
 import { getSiteSettings } from "@/lib/settings";
+import { fulfillPaidOrderItems } from "@/lib/commerce/fulfill";
+import { sendTransactionalEmail, orderUrl } from "@/lib/email";
+import { vipGateMessage, stockGateMessage } from "@/lib/commerce/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,13 +20,21 @@ interface CartItemWithProduct {
   productId: string;
   quantity: number;
   savedForLater: boolean;
-  product: { discountPrice: unknown; price: unknown };
+  product: {
+    id?: string;
+    discountPrice: unknown;
+    price: unknown;
+    stock?: number | null;
+    isVipOnly?: boolean;
+    name?: string;
+  };
 }
 
 interface OrderItemRow {
   id: string;
   productId: string;
   quantity: number;
+  licenseKey?: string | null;
 }
 
 export async function POST(req: NextRequest) {
@@ -34,13 +45,27 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const parsed = checkoutSchema.safeParse(body);
-  if (!parsed.success) return jsonError("Thanh toán chỉ sử dụng số dư Wallet. Vui lòng nạp tiền trước khi mua.", 422);
+  if (!parsed.success) return jsonError("Vui lòng chọn phương thức thanh toán hợp lệ.", 422);
 
   const cart: CartWithItems = await getOrCreateCart(user.sub);
   const activeItems = (cart.items as CartItemWithProduct[]).filter((item) => !item.savedForLater);
   if (activeItems.length === 0) return jsonError("Giỏ hàng đang trống.", 400);
 
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.sub },
+    select: { membershipTier: true, email: true, displayName: true }
+  });
+
+  for (const item of activeItems) {
+    const vipBlock = vipGateMessage(Boolean(item.product.isVipOnly), dbUser?.membershipTier);
+    if (vipBlock) return jsonError(`${item.product.name ?? "Sản phẩm"}: ${vipBlock}`, 403);
+    const stockBlock = stockGateMessage(item.product.stock, item.quantity);
+    if (stockBlock) return jsonError(`${item.product.name ?? "Sản phẩm"}: ${stockBlock}`, 409);
+  }
+
   const summary = computeCartSummary(cart);
+  const paymentMethod = parsed.data.paymentMethod;
+  const paymentNote = parsed.data.paymentNote?.trim() || null;
 
   try {
     const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -53,7 +78,8 @@ export async function POST(req: NextRequest) {
           taxTotal: summary.taxTotal,
           total: summary.total,
           couponId: cart.couponId,
-          paymentMethod: "WALLET",
+          paymentMethod,
+          paymentNote,
           status: "PENDING",
           items: {
             create: activeItems.map((item: CartItemWithProduct) => ({
@@ -66,12 +92,27 @@ export async function POST(req: NextRequest) {
         include: { items: true }
       });
 
+      if (paymentMethod === "BANK_TRANSFER") {
+        await tx.notification.create({
+          data: {
+            userId: user.sub,
+            type: "ORDER",
+            title: "Đơn hàng đang chờ xác nhận chuyển khoản",
+            body: `Đơn ${order.orderNumber} đã được tạo. Vault sẽ mở ngay khi Super Admin xác nhận đã nhận tiền.`
+          }
+        });
+        if (cart.couponId) {
+          await tx.coupon.update({ where: { id: cart.couponId }, data: { usageCount: { increment: 1 } } });
+        }
+        await tx.cartItem.deleteMany({ where: { cartId: cart.id, savedForLater: false } });
+        await tx.cart.update({ where: { id: cart.id }, data: { couponId: null } });
+        return order;
+      }
+
       const wallet = await tx.wallet.findUnique({ where: { userId: user.sub } });
       if (!wallet) throw new Error("WALLET_NOT_FOUND");
       if (wallet.frozen) throw new Error("WALLET_FROZEN");
 
-      // Atomic debit: the database only applies the debit when the wallet has
-      // enough balance and is not frozen. This prevents double-spend races.
       const oldBalance = wallet.balance;
       const newBalance = oldBalance.sub(summary.total);
       const debited = await tx.wallet.updateMany({
@@ -91,12 +132,8 @@ export async function POST(req: NextRequest) {
           note: `Thanh toán đơn hàng ${order.orderNumber}`
         }
       });
-      await tx.order.update({ where: { id: order.id }, data: { status: "PAID", paidAt: new Date() } });
-
-      for (const item of order.items as OrderItemRow[]) {
-        await tx.downloadToken.create({ data: { token: generateSecureToken(), userId: user.sub, productId: item.productId, orderItemId: item.id } });
-        await tx.product.update({ where: { id: item.productId }, data: { salesCount: { increment: item.quantity } } });
-      }
+      const paid = await tx.order.update({ where: { id: order.id }, data: { status: "PAID", paidAt: new Date() }, include: { items: true } });
+      await fulfillPaidOrderItems(tx, { userId: user.sub, items: paid.items as OrderItemRow[] });
 
       await tx.notification.create({
         data: {
@@ -114,22 +151,31 @@ export async function POST(req: NextRequest) {
       await tx.cartItem.deleteMany({ where: { cartId: cart.id, savedForLater: false } });
       await tx.cart.update({ where: { id: cart.id }, data: { couponId: null } });
 
-      return order;
+      return paid;
     });
 
-    // Referral commission — deliberately OUTSIDE the checkout transaction and
-    // wrapped so any failure here is logged but never rolls back or fails
-    // the purchase the buyer is waiting on. Runs once, on a referred user's
-    // very first PAID order.
-    await creditReferralCommissionIfEligible(user.sub, result);
+    if (result.status === "PAID") {
+      await creditReferralCommissionIfEligible(user.sub, result);
+    }
+
+    if (dbUser?.email) {
+      const paid = paymentMethod === "WALLET";
+      await sendTransactionalEmail({
+        to: dbUser.email,
+        subject: paid ? `Đơn ${result.orderNumber} đã thanh toán` : `Đơn ${result.orderNumber} đang chờ chuyển khoản`,
+        text: paid
+          ? `Cảm ơn bạn đã mua trên KhangHuynh Vault. Đơn ${result.orderNumber} đã vào Vault.\n${orderUrl(result.id)}`
+          : `Đơn ${result.orderNumber} đã được tạo. Chuyển khoản đúng số tiền rồi chờ Super Admin xác nhận.\n${orderUrl(result.id)}`
+      });
+    }
 
     return jsonOk({ order: result }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "WALLET_NOT_FOUND") {
-      return jsonError("Tài khoản chưa có Wallet. Vui lòng nạp tiền trước khi mua.", 400);
+      return jsonError("Tài khoản chưa có Wallet. Vui lòng nạp tiền hoặc chọn chuyển khoản.", 400);
     }
     if (error instanceof Error && error.message === "INSUFFICIENT_BALANCE") {
-      return jsonError("Số dư ví không đủ để thanh toán đơn hàng này.", 402);
+      return jsonError("Số dư ví không đủ. Hãy nạp thêm hoặc chọn chuyển khoản.", 402);
     }
     if (error instanceof Error && error.message === "WALLET_FROZEN") {
       return jsonError("Ví của bạn đang bị tạm khóa. Vui lòng liên hệ Admin.", 423);
@@ -145,22 +191,13 @@ interface PaidOrder {
   total: Decimal;
 }
 
-/**
- * Credits the referrer's wallet a % of a referred user's FIRST paid order.
- * Intentionally best-effort: any failure is logged, never thrown, so a bug
- * or edge case in the referral program can never block or reverse a real
- * purchase. Idempotent by construction — only fires when the order count
- * for this buyer is exactly 1 (i.e. this order), so re-running it (it never
- * is, but hypothetically) on the same buyer after a second purchase is a
- * no-op.
- */
 async function creditReferralCommissionIfEligible(buyerId: string, order: PaidOrder) {
   try {
     const buyer = await prisma.user.findUnique({ where: { id: buyerId }, select: { referredById: true, displayName: true } });
     if (!buyer?.referredById) return;
 
     const paidOrderCount = await prisma.order.count({ where: { userId: buyerId, status: "PAID" } });
-    if (paidOrderCount !== 1) return; // Not their first purchase — commission already paid (or never eligible).
+    if (paidOrderCount !== 1) return;
 
     const settings = await getSiteSettings();
     if (!settings.referralEnabled) return;

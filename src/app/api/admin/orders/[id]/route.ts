@@ -2,8 +2,9 @@ import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth/guard";
-import { generateSecureToken } from "@/lib/tokens";
 import { jsonError, jsonOk, handleApiError } from "@/lib/api";
+import { fulfillPaidOrderItems } from "@/lib/commerce/fulfill";
+import { sendTransactionalEmail, orderUrl } from "@/lib/email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,21 +44,24 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (status === "PAID") {
       await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         await tx.order.update({ where: { id: order.id }, data: { status: "PAID", paidAt: new Date(), ...(hasNote ? { adminNote } : {}) } });
-        for (const item of order.items) {
-          await tx.downloadToken.create({
-            data: { token: generateSecureToken(), userId: order.userId, productId: item.productId, orderItemId: item.id }
-          });
-          await tx.product.update({ where: { id: item.productId }, data: { salesCount: { increment: item.quantity } } });
-        }
+        await fulfillPaidOrderItems(tx, { userId: order.userId, items: order.items });
         await tx.notification.create({
           data: {
             userId: order.userId,
             type: "ORDER",
             title: "Đơn hàng đã được xác nhận",
-            body: `Đơn hàng ${order.orderNumber} đã thanh toán thành công. Bạn có thể tải xuống sản phẩm.`
+            body: `Đơn hàng ${order.orderNumber} đã thanh toán thành công. Sản phẩm đã vào Vault.`
           }
         });
       });
+      const buyer = await prisma.user.findUnique({ where: { id: order.userId }, select: { email: true } });
+      if (buyer?.email) {
+        await sendTransactionalEmail({
+          to: buyer.email,
+          subject: `Đơn ${order.orderNumber} đã được xác nhận`,
+          text: `Chuyển khoản của bạn đã được xác nhận. Vault đã mở.\n${orderUrl(order.id)}`
+        });
+      }
     } else {
       await prisma.order.update({ where: { id: order.id }, data: { status: "CANCELLED", ...(hasNote ? { adminNote } : {}) } });
       await prisma.notification.create({

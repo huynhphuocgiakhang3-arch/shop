@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 type SearchProduct = { id: string; name: string; slug: string; thumbnailUrl: string | null; price: unknown; discountPrice: unknown };
 type SearchCategory = { id: string; name: string; slug: string };
-type SearchResponse = { products: SearchProduct[]; categories: SearchCategory[] };
+type SearchResponse = { products: SearchProduct[]; categories: SearchCategory[]; suggestions?: SearchProduct[] };
 
 function formatPrice(value: unknown) {
   const number = Number(value ?? 0);
@@ -95,7 +95,21 @@ export function SearchCommandPalette() {
               ) : loading ? (
                 <div className="space-y-2 p-3">{[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-white/[.045]" />)}</div>
               ) : data.products.length === 0 && data.categories.length === 0 ? (
-                <div className="p-10 text-center"><FolderSearch className="mx-auto h-10 w-10 text-white/20" /><p className="mt-4 font-medium text-white">Không tìm thấy kết quả</p><p className="mt-1 text-sm text-white/35">Thử một từ khóa khác hoặc mở Marketplace.</p><button type="button" onClick={() => go(`/san-pham?q=${encodeURIComponent(q.trim())}`)} className="mt-5 rounded-full bg-accent-orange px-5 py-2.5 text-sm font-bold text-black">Tìm trong Marketplace</button></div>
+                <div className="p-8 text-center">
+                  <FolderSearch className="mx-auto h-10 w-10 text-white/20" />
+                  <p className="mt-4 font-medium text-white">Không tìm thấy kết quả</p>
+                  <p className="mt-1 text-sm text-white/35">Thử từ khóa khác, hoặc xem gợi ý gần đúng bên dưới.</p>
+                  {data.suggestions && data.suggestions.length > 0 ? (
+                    <div className="mt-5 grid gap-2 text-left">
+                      {data.suggestions.map((product) => (
+                        <button key={product.id} type="button" onClick={() => go(`/san-pham/${product.slug}`)} className="khv-interactive rounded-2xl border border-white/10 px-3 py-2 text-small text-white/80">
+                          {product.name}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  <button type="button" onClick={() => go(`/san-pham?q=${encodeURIComponent(q.trim())}`)} className="mt-5 rounded-full bg-accent-orange px-5 py-2.5 text-sm font-bold text-black">Tìm trong Marketplace</button>
+                </div>
               ) : (
                 <div className="space-y-5">
                   {data.products.length > 0 ? <section><div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[.2em] text-white/30">Sản phẩm</div><div className="grid gap-2">{data.products.map((product) => { const price = product.discountPrice ?? product.price; return <button key={product.id} type="button" onClick={() => go(`/san-pham/${product.slug}`)} className="khv-interactive flex w-full items-center gap-3 rounded-2xl border border-white/[.06] bg-white/[.02] p-2.5 text-left hover:border-accent-orange/25 hover:bg-white/[.045]"><div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white/[.05]">{product.thumbnailUrl ? <img src={product.thumbnailUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-white/20"><Sparkles className="h-5 w-5" /></div>}</div><div className="min-w-0 flex-1"><div className="truncate font-semibold text-white">{product.name}</div><div className="mt-1 text-xs text-accent-orange">{formatPrice(price)}</div></div><ArrowRight className="mr-2 h-4 w-4 shrink-0 text-white/25" /></button>; })}</div></section> : null}

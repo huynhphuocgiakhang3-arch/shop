@@ -14,7 +14,8 @@ export const applyCouponSchema = z.object({
 });
 
 export const checkoutSchema = z.object({
-  paymentMethod: z.literal("WALLET")
+  paymentMethod: z.enum(["WALLET", "BANK_TRANSFER"]),
+  paymentNote: z.string().max(200).optional()
 });
 
 export const walletDepositSchema = z

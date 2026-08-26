@@ -50,6 +50,22 @@ export async function GET(req: NextRequest) {
       })
     ]);
 
+    if (products.length === 0) {
+      const prefix = q.slice(0, 3);
+      const suggestions = await prisma.product.findMany({
+        where: {
+          status: "PUBLISHED",
+          OR: [
+            { name: { contains: prefix, mode: "insensitive" } },
+            { tags: { hasSome: q.split(/\s+/).filter(Boolean) } }
+          ]
+        },
+        take: 5,
+        select: { id: true, name: true, slug: true, thumbnailUrl: true, price: true, discountPrice: true }
+      });
+      return jsonOk({ products: [], categories, suggestions });
+    }
+
     return jsonOk({ products, categories });
   } catch (error) {
     return handleApiError(error, "search:GET");

@@ -4,13 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingBag, Bookmark } from "lucide-react";
 import {
   useCart,
   useUpdateCartItem,
   useRemoveCartItem,
   useApplyCoupon,
-  useRemoveCoupon
+  useRemoveCoupon,
+  useToggleSaveForLater
 } from "@/hooks/useCart";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Button } from "@/components/ui/Button";
@@ -26,6 +27,7 @@ export default function CartPage() {
   const removeItem = useRemoveCartItem();
   const applyCoupon = useApplyCoupon();
   const removeCoupon = useRemoveCoupon();
+  const saveForLater = useToggleSaveForLater();
   const { show } = useToast();
   const router = useRouter();
   const [couponCode, setCouponCode] = useState("");
@@ -33,9 +35,10 @@ export default function CartPage() {
   if (isLoading) return <LoadingBlock />;
 
   const items = data?.cart.items.filter((i) => !i.savedForLater) ?? [];
+  const saved = data?.cart.items.filter((i) => i.savedForLater) ?? [];
   const summary = data?.summary;
 
-  if (items.length === 0) {
+  if (items.length === 0 && saved.length === 0) {
     return (
       <EmptyState
         title="Giỏ hàng của bạn đang trống"
@@ -94,6 +97,14 @@ export default function CartPage() {
                 </button>
               </div>
 
+              <button
+                onClick={() => saveForLater.mutate(item.id, { onSuccess: () => show("Đã lưu để mua sau.", "success") })}
+                className="text-white/30 hover:text-white"
+                aria-label="Lưu mua sau"
+                title="Lưu mua sau"
+              >
+                <Bookmark className="h-4 w-4" />
+              </button>
               <button
                 onClick={() => removeItem.mutate(item.id)}
                 className="text-white/30 hover:text-state-danger"
@@ -155,10 +166,29 @@ export default function CartPage() {
           </div>
         </div>
 
-        <Button className="mt-5 w-full" onClick={() => router.push("/thanh-toan")}>
+        <Button className="mt-5 w-full" onClick={() => router.push("/thanh-toan")} disabled={items.length === 0}>
           <ShoppingBag className="h-4 w-4" /> Tiến hành thanh toán
         </Button>
       </GlassPanel>
+
+      {saved.length > 0 ? (
+        <div className="lg:col-span-2">
+          <h2 className="mb-3 text-title text-white">Mua sau</h2>
+          <div className="grid gap-3">
+            {saved.map((item) => (
+              <GlassPanel key={item.id} className="flex items-center gap-4 p-4">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-white/5">
+                  <Image src={item.product.thumbnailUrl} alt={item.product.name} fill className="object-cover" />
+                </div>
+                <Link href={`/san-pham/${item.product.slug}`} className="min-w-0 flex-1 truncate text-small text-white/80">
+                  {item.product.name}
+                </Link>
+                <Button variant="secondary" onClick={() => saveForLater.mutate(item.id)}>Đưa lại vào giỏ</Button>
+              </GlassPanel>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

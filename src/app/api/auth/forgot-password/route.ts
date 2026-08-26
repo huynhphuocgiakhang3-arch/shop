@@ -5,6 +5,7 @@ import { jsonError, jsonOk, logApiError } from "@/lib/api";
 import { rateLimit, clientIp } from "@/lib/security/rate-limit";
 import { isSameOrigin } from "@/lib/security/same-origin";
 import { generateSecureToken } from "@/lib/tokens";
+import { sendTransactionalEmail, resetPasswordUrl } from "@/lib/email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,7 +35,13 @@ export async function POST(req: NextRequest) {
       data: { token, userId: user.id, expiresAt: new Date(Date.now() + 60 * 60 * 1000) }
     });
 
-    console.info(`[auth/forgot-password] Reset link for ${user.email}: /dat-lai-mat-khau?token=${token}`);
+    const link = resetPasswordUrl(token);
+    console.info(`[auth/forgot-password] Reset link for ${user.email}: ${link}`);
+    await sendTransactionalEmail({
+      to: user.email,
+      subject: "Đặt lại mật khẩu KhangHuynh Vault",
+      text: `Bạn vừa yêu cầu đặt lại mật khẩu. Mở liên kết này trong vòng 60 phút:\n\n${link}\n\nNếu bạn không yêu cầu, hãy bỏ qua email này.`
+    });
 
     return jsonOk({ message: GENERIC_MESSAGE });
   } catch (error) {

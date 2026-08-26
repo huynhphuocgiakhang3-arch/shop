@@ -52,6 +52,7 @@ function formatVnd(value: number | string) {
 }
 
 function primaryBadge(product: ProductCardData) {
+  if (product.isVipOnly) return { label: "VIP", tone: "blue" as const };
   if (product.isBestseller) return { label: "Bán chạy", tone: "orange" as const };
   if (product.isFeatured) return { label: "Nổi bật", tone: "orange" as const };
   if (product.isEditorsPick) return { label: "Editor's Pick", tone: "blue" as const };
@@ -75,9 +76,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   const hasDiscount = discountValue !== null;
   const displayPrice = discountValue ?? product.price;
   const description = product.description || product.shortDescription;
-  const bullets = (product.featureBullets?.length ? product.featureBullets : ["Giao hàng số tức thì", "Kiểm duyệt & bảo mật", "Hỗ trợ khách hàng 24/7"])
-    .filter(Boolean)
-    .slice(0, 4);
+  const bullets = (product.featureBullets ?? []).filter(Boolean).slice(0, 3);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const isOwned = Boolean(product.id && owned.has(product.id));
   const isWishlisted = Boolean(product.id && favoritesData?.favorites.some((item) => item.product.id === product.id));
@@ -115,7 +114,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       onPointerMove={handlePointerMove}
       onPointerLeave={resetTilt}
       data-khv-mobile-card
-      className="khv-product-card group glass-surface khv-card-shine khv-hover-glow relative flex h-full min-h-[560px] flex-col overflow-hidden rounded-[30px] border-white/[.085] shadow-[0_24px_90px_rgba(0,0,0,.26)]"
+      className="khv-product-card group glass-surface khv-card-shine khv-hover-glow relative flex h-full min-h-0 flex-col overflow-hidden rounded-[26px] border-white/[.085] shadow-[0_24px_90px_rgba(0,0,0,.26)]"
     >
       <Link
         href={`/san-pham/${product.slug}`}
@@ -238,7 +237,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
               </div>
             </div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-state-success/20 bg-state-success/[.055] px-2.5 py-1.5 text-[10px] font-semibold text-state-success">
-              <Zap className="h-3 w-3" /> Instant
+              <Zap className="h-3 w-3" /> Tức thì
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2.5">

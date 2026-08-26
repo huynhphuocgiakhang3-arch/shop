@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Heart, ShoppingCart, Download, ShieldCheck, ChevronLeft, PencilLine, Share2, Check, FileKey, RefreshCw, Headset } from "lucide-react";
+import { Star, Heart, ShoppingCart, Download, ShieldCheck, ChevronLeft, PencilLine, Share2, Check, FileKey, RefreshCw, Headset, Crown } from "lucide-react";
+import { isVipMember } from "@/lib/commerce/access";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { SafeImage } from "@/components/ui/SafeImage";
 import { trackRecentlyViewed } from "@/lib/commerce/recently-viewed";
@@ -56,8 +57,15 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
     router.push("/dang-nhap");
   };
 
+  const vipLocked = Boolean(product.isVipOnly && !isVipMember(userData?.user?.membershipTier));
+
   const handleAddToCart = () => {
     if (!userData?.user) return requireLogin();
+    if (vipLocked) {
+      show("Sản phẩm dành cho thành viên VIP.", "info");
+      router.push("/thanh-vien");
+      return;
+    }
     addToCart.mutate(
       { productId: product.id },
       {
@@ -69,6 +77,11 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
 
   const handleBuyNow = () => {
     if (!userData?.user) return requireLogin();
+    if (vipLocked) {
+      show("Sản phẩm dành cho thành viên VIP.", "info");
+      router.push("/thanh-vien");
+      return;
+    }
     addToCart.mutate(
       { productId: product.id },
       {
@@ -213,6 +226,12 @@ export function ProductDetailClient({ slug, initialData }: { slug: string; initi
           </div>
 
           <p className="mt-5 text-small leading-6 text-white/60">{product.shortDescription}</p>
+
+          {product.isVipOnly ? (
+            <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-accent-blue/30 bg-accent-blue/10 px-3 py-1.5 text-caption text-accent-blue">
+              <Crown className="h-3.5 w-3.5" /> Chỉ thành viên VIP (Bạc trở lên)
+            </p>
+          ) : null}
 
           <div className="mt-6 flex flex-wrap gap-3">
             {hasPurchased ? (

@@ -13,7 +13,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     const order = await prisma.order.findUnique({
       where: { id: params.id },
       include: {
-        items: { include: { product: { select: { name: true, thumbnailUrl: true, slug: true } } } },
+        items: { include: { product: { select: { name: true, thumbnailUrl: true, slug: true, licenseType: true } } } },
         coupon: { select: { code: true } },
         user: { select: { displayName: true, email: true } }
       }

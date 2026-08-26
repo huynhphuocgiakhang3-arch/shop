@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth/guard";
 import { addToCartSchema } from "@/lib/validations/commerce";
 import { getOrCreateCart, computeCartSummary } from "@/lib/commerce/cart";
 import { jsonError, jsonOk, handleApiError } from "@/lib/api";
+import { vipGateMessage, stockGateMessage } from "@/lib/commerce/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +20,12 @@ export async function POST(req: NextRequest) {
 
     const product = await prisma.product.findUnique({ where: { id: parsed.data.productId } });
     if (!product || product.status !== "PUBLISHED") return jsonError("Không tìm thấy sản phẩm.", 404);
+
+    const dbUser = await prisma.user.findUnique({ where: { id: user.sub }, select: { membershipTier: true } });
+    const vipBlock = vipGateMessage(product.isVipOnly, dbUser?.membershipTier);
+    if (vipBlock) return jsonError(vipBlock, 403);
+    const stockBlock = stockGateMessage(product.stock, parsed.data.quantity);
+    if (stockBlock) return jsonError(stockBlock, 409);
 
     const cart = await getOrCreateCart(user.sub);
 

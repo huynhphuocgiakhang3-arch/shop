@@ -8,7 +8,10 @@ export interface OrderListItem {
   total: string;
   paymentMethod: string;
   createdAt: string;
-  items: { id: string; quantity: number; product: { name: string; thumbnailUrl: string; slug: string } }[];
+  items: { id: string; quantity: number; unitPrice?: string; licenseKey?: string | null; product: { name: string; thumbnailUrl: string; slug: string; licenseType?: string | null } }[];
+  paymentNote?: string | null;
+  paidAt?: string | null;
+  adminNote?: string | null;
 }
 
 interface Paginated<T> {

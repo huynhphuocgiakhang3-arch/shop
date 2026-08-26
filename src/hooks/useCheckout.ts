@@ -2,13 +2,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 
 export interface OrderResult {
-  order: { id: string; orderNumber: string; status: string; total: string };
+  order: { id: string; orderNumber: string; status: string; total: string; paymentMethod?: string };
 }
 
 export function useCheckout() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (_unused?: void) => api.post<OrderResult>("/api/checkout", { paymentMethod: "WALLET" }),
+    mutationFn: (input: { paymentMethod: "WALLET" | "BANK_TRANSFER"; paymentNote?: string }) =>
+      api.post<OrderResult>("/api/checkout", input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["cart"] });
       qc.invalidateQueries({ queryKey: ["wallet"] });

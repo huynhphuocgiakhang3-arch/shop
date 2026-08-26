@@ -69,6 +69,16 @@ export const TICKET_PRIORITY_LABEL: Record<"LOW" | "MEDIUM" | "HIGH" | "URGENT",
   URGENT: "Khẩn cấp"
 };
 
+export const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  WALLET: "Ví Vault",
+  BANK_TRANSFER: "Chuyển khoản",
+  STRIPE: "Stripe",
+  PAYPAL: "PayPal",
+  VNPAY: "VNPay",
+  MOMO: "MoMo",
+  MANUAL: "Thủ công"
+};
+
 export const MEMBERSHIP_LABEL: Record<MembershipTier, string> = {
   FREE: "Miễn phí",
   SILVER: "Bạc",
